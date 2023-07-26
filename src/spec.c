@@ -1101,6 +1101,7 @@ StrongRef IndexSpec_Parse(const char *name, const char **argv, int argc, QueryEr
 
   ArgsCursor ac = {0};
   ArgsCursor acStopwords = {0};
+  char *acDelimiters = NULL;
 
   ArgsCursor_InitCString(&ac, argv, argc);
   long long timeout = -1;
@@ -1125,6 +1126,7 @@ StrongRef IndexSpec_Parse(const char *name, const char **argv, int argc, QueryEr
       SPEC_FOLLOW_HASH_ARGS_DEF(&rule_args){
           .name = SPEC_TEMPORARY_STR, .target = &timeout, .type = AC_ARGTYPE_LLONG},
       {.name = SPEC_STOPWORDS_STR, .target = &acStopwords, .type = AC_ARGTYPE_SUBARGS},
+      {.name = SPEC_DELIMITERS_STR, .target = &acDelimiters, .type = AC_ARGTYPE_STRING},
       {.name = NULL}};
 
   ACArgSpec *errarg = NULL;
@@ -1161,6 +1163,20 @@ StrongRef IndexSpec_Parse(const char *name, const char **argv, int argc, QueryEr
     }
     spec->stopwords = NewStopWordListCStr((const char **)acStopwords.objs, acStopwords.argc);
     spec->flags |= Index_HasCustomStopwords;
+  }
+
+  //WIP: Delimiters_Unref?
+  if (acDelimiters != NULL) {
+    if(spec->delimiters) {
+      DelimiterList_Unref(spec->delimiters);
+      //rm_free(spec->delimiters);
+    }
+    spec->delimiters = NewDelimiterListCStr((const char *) acDelimiters);
+    // DelimiterList dl = rm_malloc(sizeof(char) * (strlen(acDelimiters) + 1));
+    // strcpy(dl, acDelimiters);
+    // spec->delimiters = dl;
+
+    spec->flags |= Index_HasCustomDelimiters;
   }
 
   if (!AC_AdvanceIfMatch(&ac, SPEC_SCHEMA_STR)) {
@@ -1598,6 +1614,7 @@ IndexSpec *NewIndexSpec(const char *name) {
   sp->nameLen = strlen(name);
   sp->docs = DocTable_New(INITIAL_DOC_TABLE_SIZE);
   sp->stopwords = DefaultStopWordList();
+  sp->delimiters = NULL;
   sp->terms = NewTrie(NULL, Trie_Sort_Lex);
   sp->suffix = NULL;
   sp->suffixMask = (t_fieldMask)0;
@@ -2232,6 +2249,11 @@ void IndexSpec_AddToInfo(RedisModuleInfoCtx *ctx, IndexSpec *sp) {
   // Stop words
   if (sp->flags & Index_HasCustomStopwords)
     AddStopWordsListToInfo(ctx, sp->stopwords);
+
+  // Delimiters
+  if (sp->flags & Index_HasCustomDelimiters) {
+    AddDelimiterListToInfo(ctx, sp->delimiters);
+  }
 }
 #endif // FTINFO_FOR_INFO_MODULES
 
@@ -2387,6 +2409,16 @@ int IndexSpec_CreateFromRdb(RedisModuleCtx *ctx, RedisModuleIO *rdb, int encver,
       goto cleanup;
   } else {
     sp->stopwords = DefaultStopWordList();
+  }
+
+  if (DelimiterList_RdbLoad(rdb, sp->delimiters) != REDISMODULE_OK) {
+    QueryError_SetErrorFmt(status, QUERY_EPARSEARGS, "Failed to load delimiters");
+    goto cleanup;
+  }
+
+  if (SchemaRule_RdbLoad(spec_ref, rdb, encver) != REDISMODULE_OK) {
+    QueryError_SetErrorFmt(status, QUERY_EPARSEARGS, "Failed to load schema rule");
+    goto cleanup;
   }
 
   sp->uniqueId = spec_unique_ids++;
@@ -3066,4 +3098,57 @@ void Indexes_ReplaceMatchingWithSchemaRules(RedisModuleCtx *ctx, RedisModuleStri
   Indexes_SpecOpsIndexingCtxFree(from_specs);
   Indexes_SpecOpsIndexingCtxFree(to_specs);
 }
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+int DelimiterList_Contains(const DelimiterList dl, const char* term) {
+  return 0;
+}
+
+void DelimiterList_FreeGlobals(void) {
+}
+
+DelimiterList NewDelimiterListCStr(const char* str) {
+  if(str == NULL) {
+    return NULL;
+  }
+  //if (len > MAX_DELIMITERLIST_SIZE) {
+  // Truncate?  
+  //}
+
+  DelimiterList dl = rm_malloc(sizeof(char) * (strlen(str)+1));
+  strcpy(dl, str);
+  return dl;
+}
+
+void DelimiterList_Unref(DelimiterList dl) {
+  rm_free(dl);
+}
+
+int DelimiterList_RdbLoad(RedisModuleIO* rdb, DelimiterList dl) {
+  LoadStringBufferAlloc_IOErrors(rdb, dl, NULL, goto fail);
+  return REDISMODULE_OK;
+
+fail:
+  return REDISMODULE_ERR;
+}
+
+void DelimiterList_RdbSave(RedisModuleIO* rdb, DelimiterList dl) {
+  if (dl != NULL) {
+    RedisModule_SaveStringBuffer(rdb, dl, strlen(dl) + 1);
+  }
+}
+
+void DelimiterList_Ref(DelimiterList dl) {
+}
+
+void ReplyWithdelimiterList(RedisModule_Reply* reply, DelimiterList dl) {
+}
+
+void AddDelimiterListToInfo(RedisModuleInfoCtx* ctx, DelimiterList dl) {
+}
+
+char* GetDelimiterList(DelimiterList* dl) {
+  return NULL;
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////

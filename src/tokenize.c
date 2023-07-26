@@ -146,12 +146,13 @@ void simpleTokenizer_Free(RSTokenizer *self) {
 }
 
 static void doReset(RSTokenizer *tokbase, Stemmer *stemmer, StopWordList *stopwords,
-                    uint32_t opts) {
+                    uint32_t opts, char *delimiters) {
   simpleTokenizer *t = (simpleTokenizer *)tokbase;
   t->stemmer = stemmer;
   t->base.ctx.stopwords = stopwords;
   t->base.ctx.options = opts;
   t->base.ctx.lastOffset = 0;
+  t->base.ctx.delimiters = delimiters;
   if (stopwords) {
     // Initially this function is called when we receive it from the mempool;
     // in which case stopwords is NULL.
@@ -159,13 +160,14 @@ static void doReset(RSTokenizer *tokbase, Stemmer *stemmer, StopWordList *stopwo
   }
 }
 
-RSTokenizer *NewSimpleTokenizer(Stemmer *stemmer, StopWordList *stopwords, uint32_t opts) {
+RSTokenizer *NewSimpleTokenizer(Stemmer *stemmer, StopWordList *stopwords,
+                                uint32_t opts, char *delimiters) {
   simpleTokenizer *t = rm_calloc(1, sizeof(*t));
   t->base.Free = simpleTokenizer_Free;
   t->base.Next = simpleTokenizer_Next;
   t->base.Start = simpleTokenizer_Start;
   t->base.Reset = doReset;
-  t->base.Reset(&t->base, stemmer, stopwords, opts);
+  t->base.Reset(&t->base, stemmer, stopwords, opts, delimiters);
   return &t->base;
 }
 
@@ -173,10 +175,10 @@ static mempool_t *tokpoolLatin_g = NULL;
 static mempool_t *tokpoolCn_g = NULL;
 
 static void *newLatinTokenizerAlloc() {
-  return NewSimpleTokenizer(NULL, NULL, 0);
+  return NewSimpleTokenizer(NULL, NULL, 0, NULL);
 }
 static void *newCnTokenizerAlloc() {
-  return NewChineseTokenizer(NULL, NULL, 0);
+  return NewChineseTokenizer(NULL, NULL, 0, NULL);
 }
 static void tokenizerFree(void *p) {
   RSTokenizer *t = p;
@@ -199,7 +201,8 @@ RSTokenizer *GetChineseTokenizer(Stemmer *stemmer, StopWordList *stopwords) {
   }
 
   RSTokenizer *t = mempool_get(tokpoolCn_g);
-  t->Reset(t, stemmer, stopwords, 0);
+  // TODO: Check if we need to add delimiters as argument to this function
+  t->Reset(t, stemmer, stopwords, 0, NULL);
   return t;
 }
 
@@ -210,7 +213,8 @@ RSTokenizer *GetSimpleTokenizer(Stemmer *stemmer, StopWordList *stopwords) {
     mempool_test_set_global(&tokpoolLatin_g, &opts);
   }
   RSTokenizer *t = mempool_get(tokpoolLatin_g);
-  t->Reset(t, stemmer, stopwords, 0);
+  // TODO: Check if we need to add delimiters as argument to this function
+  t->Reset(t, stemmer, stopwords, 0, NULL);
   return t;
 }
 
