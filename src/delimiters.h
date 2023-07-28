@@ -54,7 +54,7 @@ void DelimiterList_RdbSave(RedisModuleIO *rdb, DelimiterList dl);
 
 void DelimiterList_Ref(DelimiterList dl);
 
-void ReplyWithdelimiterList(RedisModule_Reply *reply, DelimiterList dl);
+void ReplyWithDelimiterList(RedisModule_Reply *reply, DelimiterList dl);
 
 #ifdef FTINFO_FOR_INFO_MODULES
 void AddDelimiterListToInfo(RedisModuleInfoCtx *ctx, DelimiterList dl);

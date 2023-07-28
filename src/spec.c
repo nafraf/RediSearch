@@ -3141,7 +3141,16 @@ void DelimiterList_RdbSave(RedisModuleIO* rdb, DelimiterList dl) {
 void DelimiterList_Ref(DelimiterList dl) {
 }
 
-void ReplyWithdelimiterList(RedisModule_Reply* reply, DelimiterList dl) {
+void ReplyWithDelimiterList(RedisModule_Reply* reply, DelimiterList dl) {
+  RedisModule_Reply_SimpleString(reply, "delimiters");
+
+  RedisModule_Reply_Array(reply);
+  if (dl == NULL) {
+    RedisModule_Reply_Null(reply);
+  } else {
+    RedisModule_Reply_StringBuffer(reply, dl, strlen(dl));
+  }
+  RedisModule_Reply_ArrayEnd(reply);
 }
 
 void AddDelimiterListToInfo(RedisModuleInfoCtx* ctx, DelimiterList dl) {
