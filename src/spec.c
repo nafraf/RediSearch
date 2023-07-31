@@ -1165,17 +1165,11 @@ StrongRef IndexSpec_Parse(const char *name, const char **argv, int argc, QueryEr
     spec->flags |= Index_HasCustomStopwords;
   }
 
-  //WIP: Delimiters_Unref?
   if (acDelimiters != NULL) {
     if(spec->delimiters) {
       DelimiterList_Unref(spec->delimiters);
-      //rm_free(spec->delimiters);
     }
     spec->delimiters = NewDelimiterListCStr((const char *) acDelimiters);
-    // DelimiterList dl = rm_malloc(sizeof(char) * (strlen(acDelimiters) + 1));
-    // strcpy(dl, acDelimiters);
-    // spec->delimiters = dl;
-
     spec->flags |= Index_HasCustomDelimiters;
   }
 
@@ -1614,7 +1608,7 @@ IndexSpec *NewIndexSpec(const char *name) {
   sp->nameLen = strlen(name);
   sp->docs = DocTable_New(INITIAL_DOC_TABLE_SIZE);
   sp->stopwords = DefaultStopWordList();
-  sp->delimiters = NULL;
+  sp->delimiters = DefaultDelimiterList();
   sp->terms = NewTrie(NULL, Trie_Sort_Lex);
   sp->suffix = NULL;
   sp->suffixMask = (t_fieldMask)0;
@@ -2411,14 +2405,14 @@ int IndexSpec_CreateFromRdb(RedisModuleCtx *ctx, RedisModuleIO *rdb, int encver,
     sp->stopwords = DefaultStopWordList();
   }
 
-  if (DelimiterList_RdbLoad(rdb, sp->delimiters) != REDISMODULE_OK) {
-    QueryError_SetErrorFmt(status, QUERY_EPARSEARGS, "Failed to load delimiters");
-    goto cleanup;
-  }
-
-  if (SchemaRule_RdbLoad(spec_ref, rdb, encver) != REDISMODULE_OK) {
-    QueryError_SetErrorFmt(status, QUERY_EPARSEARGS, "Failed to load schema rule");
-    goto cleanup;
+  if(sp->flags & Index_HasCustomDelimiters) {
+    sp->delimiters = DelimiterList_RdbLoad(rdb);
+    if (sp->delimiters == NULL) {
+      goto cleanup;
+    }
+    printf("Nafraf: IndexSpec_CreateFromRdb sp->delimiters:%s\n", sp->delimiters);
+  } else {
+    sp->delimiters = DefaultDelimiterList();
   }
 
   sp->uniqueId = spec_unique_ids++;
@@ -2533,6 +2527,14 @@ void *IndexSpec_LegacyRdbLoad(RedisModuleIO *rdb, int encver) {
     sp->stopwords = DefaultStopWordList();
   }
 
+  // TODO:
+  if (sp->flags & Index_HasCustomDelimiters) {
+    //sp->delimiters = DelimiterList_RdbLoad(rdb, encver);
+    sp->delimiters = DefaultDelimiterList();
+  } else {
+    sp->delimiters = DefaultDelimiterList();
+  }
+
   sp->uniqueId = spec_unique_ids++;
 
   sp->smap = NULL;
@@ -2641,6 +2643,12 @@ void Indexes_RdbSave(RedisModuleIO *rdb, int when) {
     // If we have custom stopwords, save them
     if (sp->flags & Index_HasCustomStopwords) {
       StopWordList_RdbSave(rdb, sp->stopwords);
+    }
+
+    // If we have custom delimiters, save them
+    if (sp->flags & Index_HasCustomDelimiters) {
+      printf("Nafraf: Indexes_RdbSave sp->delimiters=%s\n", sp->delimiters);
+      DelimiterList_RdbSave(rdb, sp->delimiters);
     }
 
     if (sp->flags & Index_HasSmap) {
@@ -3098,66 +3106,4 @@ void Indexes_ReplaceMatchingWithSchemaRules(RedisModuleCtx *ctx, RedisModuleStri
   Indexes_SpecOpsIndexingCtxFree(from_specs);
   Indexes_SpecOpsIndexingCtxFree(to_specs);
 }
-///////////////////////////////////////////////////////////////////////////////////////////////
-
-int DelimiterList_Contains(const DelimiterList dl, const char* term) {
-  return 0;
-}
-
-void DelimiterList_FreeGlobals(void) {
-}
-
-DelimiterList NewDelimiterListCStr(const char* str) {
-  if(str == NULL) {
-    return NULL;
-  }
-  //if (len > MAX_DELIMITERLIST_SIZE) {
-  // Truncate?  
-  //}
-
-  DelimiterList dl = rm_malloc(sizeof(char) * (strlen(str)+1));
-  strcpy(dl, str);
-  return dl;
-}
-
-void DelimiterList_Unref(DelimiterList dl) {
-  rm_free(dl);
-}
-
-int DelimiterList_RdbLoad(RedisModuleIO* rdb, DelimiterList dl) {
-  LoadStringBufferAlloc_IOErrors(rdb, dl, NULL, goto fail);
-  return REDISMODULE_OK;
-
-fail:
-  return REDISMODULE_ERR;
-}
-
-void DelimiterList_RdbSave(RedisModuleIO* rdb, DelimiterList dl) {
-  if (dl != NULL) {
-    RedisModule_SaveStringBuffer(rdb, dl, strlen(dl) + 1);
-  }
-}
-
-void DelimiterList_Ref(DelimiterList dl) {
-}
-
-void ReplyWithDelimiterList(RedisModule_Reply* reply, DelimiterList dl) {
-  RedisModule_Reply_SimpleString(reply, "delimiters");
-
-  RedisModule_Reply_Array(reply);
-  if (dl == NULL) {
-    RedisModule_Reply_Null(reply);
-  } else {
-    RedisModule_Reply_StringBuffer(reply, dl, strlen(dl));
-  }
-  RedisModule_Reply_ArrayEnd(reply);
-}
-
-void AddDelimiterListToInfo(RedisModuleInfoCtx* ctx, DelimiterList dl) {
-}
-
-char* GetDelimiterList(DelimiterList* dl) {
-  return NULL;
-}
-
 ///////////////////////////////////////////////////////////////////////////////////////////////

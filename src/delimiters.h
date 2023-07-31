@@ -13,6 +13,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+static const char DEFAULT_DELIMITERS_STR[6] = "!#$~@";
+// static const char DEFAULT_DELIMITERS_STR[32] = "!\"#$\%&'()*+,-./:;<=>?@[\\]^`{|}~";
 //! " # $ % & ' ( ) * + , - . / : ; < = > ? @ [ \ ] ^ ` { | } ~
 // static const char DEFAULT_DELIMITERS[256] = {
 //     [' '] = 1, ['\t'] = 1, [','] = 1,  ['.'] = 1, ['/'] = 1, ['('] = 1, [')'] = 1, ['{'] = 1,
@@ -47,12 +49,12 @@ void DelimiterList_Unref(DelimiterList dl);
 #define DelimiterList_Free DelimiterList_Unref
 
 /* Load a delimiter list from RDB */
-int DelimiterList_RdbLoad(RedisModuleIO* rdb, DelimiterList dl);
+char* DelimiterList_RdbLoad(RedisModuleIO* rdb);
 
 /* Save a delimiter list to RDB */
 void DelimiterList_RdbSave(RedisModuleIO *rdb, DelimiterList dl);
 
-void DelimiterList_Ref(DelimiterList dl);
+// void DelimiterList_Ref(DelimiterList dl);
 
 void ReplyWithDelimiterList(RedisModule_Reply *reply, DelimiterList dl);
 
@@ -60,8 +62,9 @@ void ReplyWithDelimiterList(RedisModule_Reply *reply, DelimiterList dl);
 void AddDelimiterListToInfo(RedisModuleInfoCtx *ctx, DelimiterList dl);
 #endif
 
+// TODO:
 /* Returns a NULL terminated list of stopwords */
-char *GetDelimiterList(DelimiterList *dl);
+// char *GetDelimiterList(DelimiterList *dl);
 
 
 #ifdef __cplusplus
