@@ -1101,7 +1101,7 @@ StrongRef IndexSpec_Parse(const char *name, const char **argv, int argc, QueryEr
 
   ArgsCursor ac = {0};
   ArgsCursor acStopwords = {0};
-  char *acDelimiters = NULL;
+  char *separators = NULL;
 
   ArgsCursor_InitCString(&ac, argv, argc);
   long long timeout = -1;
@@ -1126,7 +1126,7 @@ StrongRef IndexSpec_Parse(const char *name, const char **argv, int argc, QueryEr
       SPEC_FOLLOW_HASH_ARGS_DEF(&rule_args){
           .name = SPEC_TEMPORARY_STR, .target = &timeout, .type = AC_ARGTYPE_LLONG},
       {.name = SPEC_STOPWORDS_STR, .target = &acStopwords, .type = AC_ARGTYPE_SUBARGS},
-      {.name = SPEC_DELIMITERS_STR, .target = &acDelimiters, .type = AC_ARGTYPE_STRING},
+      {.name = SPEC_SEPARATORS_STR, .target = &separators, .type = AC_ARGTYPE_STRING},
       {.name = NULL}};
 
   ACArgSpec *errarg = NULL;
@@ -1165,12 +1165,12 @@ StrongRef IndexSpec_Parse(const char *name, const char **argv, int argc, QueryEr
     spec->flags |= Index_HasCustomStopwords;
   }
 
-  if (acDelimiters != NULL) {
-    if(spec->delimiters) {
-      DelimiterList_Unref(spec->delimiters);
+  if (separators != NULL) {
+    if(spec->separators) {
+      SeparatorList_Unref(spec->separators);
     }
-    spec->delimiters = NewDelimiterListCStr((const char *) acDelimiters);
-    spec->flags |= Index_HasCustomDelimiters;
+    spec->separators = NewSeparatorListCStr((const char *)separators);
+    spec->flags |= Index_HasCustomSeparators;
   }
 
   if (!AC_AdvanceIfMatch(&ac, SPEC_SCHEMA_STR)) {
@@ -1410,6 +1410,13 @@ void IndexSpec_Free(IndexSpec *spec) {
     StopWordList_Unref(spec->stopwords);
     spec->stopwords = NULL;
   }
+
+  // Fre delimiter list
+  if (spec->separators) {
+    SeparatorList_Unref(spec->separators);
+    spec->separators = NULL;
+  }
+
   // Reset fields stats
   if (spec->fields != NULL) {
     for (size_t i = 0; i < spec->numFields; i++) {
@@ -1608,7 +1615,7 @@ IndexSpec *NewIndexSpec(const char *name) {
   sp->nameLen = strlen(name);
   sp->docs = DocTable_New(INITIAL_DOC_TABLE_SIZE);
   sp->stopwords = DefaultStopWordList();
-  sp->delimiters = DefaultDelimiterList();
+  sp->separators = DefaultSeparatorList();
   sp->terms = NewTrie(NULL, Trie_Sort_Lex);
   sp->suffix = NULL;
   sp->suffixMask = (t_fieldMask)0;
@@ -2244,9 +2251,9 @@ void IndexSpec_AddToInfo(RedisModuleInfoCtx *ctx, IndexSpec *sp) {
   if (sp->flags & Index_HasCustomStopwords)
     AddStopWordsListToInfo(ctx, sp->stopwords);
 
-  // Delimiters
-  if (sp->flags & Index_HasCustomDelimiters) {
-    AddDelimiterListToInfo(ctx, sp->delimiters);
+  // Separators
+  if (sp->flags & Index_HasCustomSeparators) {
+    AddSeparatorListToInfo(ctx, sp->separators);
   }
 }
 #endif // FTINFO_FOR_INFO_MODULES
@@ -2405,14 +2412,15 @@ int IndexSpec_CreateFromRdb(RedisModuleCtx *ctx, RedisModuleIO *rdb, int encver,
     sp->stopwords = DefaultStopWordList();
   }
 
-  if(sp->flags & Index_HasCustomDelimiters) {
-    sp->delimiters = DelimiterList_RdbLoad(rdb);
-    if (sp->delimiters == NULL) {
-      goto cleanup;
+  if (encver >= INDEX_SEPARATORS_VERSION) {
+    if (sp->flags & Index_HasCustomSeparators) {
+      sp->separators = SeparatorList_RdbLoad(rdb);
+      if (sp->separators == NULL) {
+        goto cleanup;
+      }
+    } else {
+      sp->separators = DefaultSeparatorList();
     }
-    printf("Nafraf: IndexSpec_CreateFromRdb sp->delimiters:%s\n", sp->delimiters);
-  } else {
-    sp->delimiters = DefaultDelimiterList();
   }
 
   sp->uniqueId = spec_unique_ids++;
@@ -2527,14 +2535,6 @@ void *IndexSpec_LegacyRdbLoad(RedisModuleIO *rdb, int encver) {
     sp->stopwords = DefaultStopWordList();
   }
 
-  // TODO:
-  if (sp->flags & Index_HasCustomDelimiters) {
-    //sp->delimiters = DelimiterList_RdbLoad(rdb, encver);
-    sp->delimiters = DefaultDelimiterList();
-  } else {
-    sp->delimiters = DefaultDelimiterList();
-  }
-
   sp->uniqueId = spec_unique_ids++;
 
   sp->smap = NULL;
@@ -2645,10 +2645,9 @@ void Indexes_RdbSave(RedisModuleIO *rdb, int when) {
       StopWordList_RdbSave(rdb, sp->stopwords);
     }
 
-    // If we have custom delimiters, save them
-    if (sp->flags & Index_HasCustomDelimiters) {
-      printf("Nafraf: Indexes_RdbSave sp->delimiters=%s\n", sp->delimiters);
-      DelimiterList_RdbSave(rdb, sp->delimiters);
+    // If we have custom separators, save them
+    if (sp->flags & Index_HasCustomSeparators) {
+      SeparatorList_RdbSave(rdb, sp->separators);
     }
 
     if (sp->flags & Index_HasSmap) {
