@@ -41,6 +41,12 @@ void FieldSpec_Cleanup(FieldSpec* fs) {
   if (fs->types & INDEXFLD_T_VECTOR) {
     VecSimParams_Cleanup(&fs->vectorOpts.vecSimParams);
   }
+
+  // Fre separator list
+  if (fs->separators) {
+    SeparatorList_Unref(fs->separators);
+    fs->separators = NULL;
+  }
 }
 
 void FieldSpec_SetSortable(FieldSpec* fs) {

@@ -53,7 +53,8 @@ static void maybeFrisoInit() {
   config_g->en_sseg = 0;
 }
 
-static void cnTokenizer_Start(RSTokenizer *base, char *text, size_t len, uint32_t options) {
+static void cnTokenizer_Start(RSTokenizer *base, char *text, size_t len,
+  uint32_t options, SeparatorList *fieldSeparatorList) {
   cnTokenizer *self = (cnTokenizer *)base;
   base->ctx.text = text;
   base->ctx.len = len;

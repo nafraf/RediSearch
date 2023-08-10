@@ -9,6 +9,7 @@
 
 #include "redisearch.h"
 #include "value.h"
+#include "separators.h"
 #include "VecSim/vec_sim.h"
 #include "geometry/geometry_types.h"
 
@@ -64,6 +65,7 @@ typedef enum {
   FieldSpec_UNF = 0x20,
   FieldSpec_WithSuffixTrie = 0x40,
   FieldSpec_UndefinedOrder = 0x80,
+  FieldSpec_WithCustomSeparators = 0x100,
 } FieldSpecOptions;
 
 RS_ENUM_BITWISE_HELPER(FieldSpecOptions)
@@ -87,7 +89,7 @@ typedef struct FieldSpec {
   char *name;
   char *path;
   FieldType types : 8;
-  FieldSpecOptions options : 8;
+  FieldSpecOptions options : 16;
 
   /** If this field is sortable, the sortable index */
   int16_t sortIdx;
@@ -118,6 +120,9 @@ typedef struct FieldSpec {
   // ID used to identify the field within the field mask
   t_fieldId ftId;
 
+  // Separators specific for this field
+  SeparatorList *separators;
+
   // TODO: More options here..
 } FieldSpec;
 
@@ -135,6 +140,7 @@ typedef struct FieldSpec {
 #define FieldSpec_HasSuffixTrie(fs) ((fs)->options & FieldSpec_WithSuffixTrie)
 #define FieldSpec_IsUndefinedOrder(fs) ((fs)->options & FieldSpec_UndefinedOrder)
 #define FieldSpec_IsUnf(fs) ((fs)->options & FieldSpec_UNF)
+#define FieldSpec_HasCustomSeparators(fs) ((fs)->options & FieldSpec_WithCustomSeparators)
 
 void FieldSpec_SetSortable(FieldSpec* fs);
 void FieldSpec_Cleanup(FieldSpec* fs);

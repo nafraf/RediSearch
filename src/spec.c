@@ -456,6 +456,15 @@ static int parseTextField(FieldSpec *fs, ArgsCursor *ac, QueryError *status) {
       continue;
     } else if(AC_AdvanceIfMatch(ac, SPEC_WITHSUFFIXTRIE_STR)) {
       fs->options |= FieldSpec_WithSuffixTrie;
+    } else if (AC_AdvanceIfMatch(ac, SPEC_SEPARATORS_STR)) {
+      const char *separatorStr;
+      size_t len;
+      int rc;
+      if ((rc = AC_GetString(ac, &separatorStr, &len, 0)) != AC_OK) {
+        return 0;
+      }
+      fs->separators = NewSeparatorListCStr(separatorStr);
+      fs->options |= FieldSpec_WithCustomSeparators;
     } else {
       break;
     }
@@ -1766,6 +1775,10 @@ static void FieldSpec_RdbSave(RedisModuleIO *rdb, FieldSpec *f) {
   if (FIELD_IS(f, INDEXFLD_T_FULLTEXT) || (f->options & FieldSpec_Dynamic)) {
     RedisModule_SaveUnsigned(rdb, f->ftId);
     RedisModule_SaveDouble(rdb, f->ftWeight);
+    
+    if (FieldSpec_HasCustomSeparators(f)){
+      SeparatorList_RdbSave(rdb, f->separators);
+    }
   }
   if (FIELD_IS(f, INDEXFLD_T_TAG) || (f->options & FieldSpec_Dynamic)) {
     RedisModule_SaveUnsigned(rdb, f->tagOpts.tagFlags);
@@ -1814,6 +1827,17 @@ static int FieldSpec_RdbLoad(RedisModuleIO *rdb, FieldSpec *f, StrongRef sp_ref,
   if (FIELD_IS(f, INDEXFLD_T_FULLTEXT) || (f->options & FieldSpec_Dynamic)) {
     f->ftId = LoadUnsigned_IOError(rdb, goto fail);
     f->ftWeight = LoadDouble_IOError(rdb, goto fail);
+
+    if (encver >= INDEX_SEPARATORS_VERSION) {
+      if (FieldSpec_HasCustomSeparators(f)) {
+        f->separators = SeparatorList_RdbLoad(rdb);
+        if (f->separators == NULL) {
+          goto fail;
+        }
+      } else {
+        f->separators = DefaultSeparatorList();
+      }
+    }
   }
   // Load tag specific options
   if (FIELD_IS(f, INDEXFLD_T_TAG) || (f->options & FieldSpec_Dynamic)) {
