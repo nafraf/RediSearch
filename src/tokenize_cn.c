@@ -64,15 +64,11 @@ static void cnTokenizer_Start(RSTokenizer *base, char *text, size_t len,
 }
 
 // check if the word has a trailing escape. assumes NUL-termination
-static int hasTrailingEscape(const char *s, size_t n, SeparatorList *dl) {
+static int hasTrailingEscape(const char *s, size_t n, SeparatorList *sl) {
   if (s[n] != '\\') {
     return 0;
   }
-  if(dl != NULL) {
-    return istoksep(s[n + 1], dl);
-  } else {
-    return istoksep(s[n + 1], NULL);
-  }
+  return istoksep(s[n + 1], sl);
 }
 
 static int appendToEscbuf(cnTokenizer *cn, const char *s, size_t n) {
@@ -87,6 +83,7 @@ static int appendToEscbuf(cnTokenizer *cn, const char *s, size_t n) {
  * When we encounter a backslash, append the next character and continue
  * the loop
  */
+#define NOT_ESCAPED_CHAR  0   // the character is not escaped
 #define ESCAPED_CHAR_SELF 1  // buf + len is the escaped character'
 #define ESCAPED_CHAR_NEXT 2  // buf + len + 1 is the escaped character
 
@@ -194,8 +191,10 @@ static uint32_t cnTokenizer_Next(RSTokenizer *base, Token *t) {
       t->rawLen = (ctx->text + ctx->len) - t->raw;
     }
 
-    if (hasTrailingEscape(bufstart, tok->rlen, ctx->separators)) {
-      // We must continue the friso loop, because we have found an escape..
+    if (hasTrailingEscape(bufstart, tok->rlen, ctx->separators) ||
+        (bufstart[tok->rlen]=='\\' && !istoksep(bufstart[tok->rlen + 1], ctx->separators) )) {
+      // We must continue the friso loop, because we have found an escaped separator..
+      // or an escaped character that is not part of the separators
       if (!useEscBuf) {
         useEscBuf = 1;
         t->tok = self->escapebuf;
@@ -206,6 +205,27 @@ static uint32_t cnTokenizer_Next(RSTokenizer *base, Token *t) {
         return t->pos;
       }
       if (!appendEscapedChars(self, tok, ESCAPED_CHAR_NEXT)) {
+        t->tokLen = self->nescapebuf;
+        return t->pos;
+      }
+      continue;
+    } else if (
+      bufstart[tok->rlen]!='\\' &&
+      !istoksep(bufstart[tok->rlen], ctx->separators) &&
+      istoksep(bufstart[tok->rlen], NULL)
+      ) {
+      // We must continue if we found an unescaped punctuation character
+      // (default separators)
+      if (!useEscBuf) {
+        useEscBuf = 1;
+        t->tok = self->escapebuf;
+      }
+      t->tokLen = self->nescapebuf;
+      if (!appendToEscbuf(self, tok->word, tok->length)) {
+        t->tokLen = self->nescapebuf;
+        return t->pos;
+      }
+      if (!appendEscapedChars(self, tok, NOT_ESCAPED_CHAR)) {
         t->tokLen = self->nescapebuf;
         return t->pos;
       }
@@ -233,7 +253,12 @@ static void cnTokenizer_Free(RSTokenizer *base) {
 static void cnTokenizer_Reset(RSTokenizer *base, Stemmer *stemmer, StopWordList *stopwords,
                               uint32_t opts, SeparatorList *separators) {
   // Nothing to do here
+  base->ctx.options = opts;
   base->ctx.lastOffset = 0;
+  base->ctx.separators = separators;
+  if (separators) {
+    SeparatorList_Ref(separators);
+  }
 }
 
 RSTokenizer *NewChineseTokenizer(Stemmer *stemmer, StopWordList *stopwords,
@@ -248,5 +273,6 @@ RSTokenizer *NewChineseTokenizer(Stemmer *stemmer, StopWordList *stopwords,
   tokenizer->base.Next = cnTokenizer_Next;
   tokenizer->base.Free = cnTokenizer_Free;
   tokenizer->base.Reset = cnTokenizer_Reset;
+  tokenizer->base.Reset(&tokenizer->base, stemmer, stopwords, opts, separators);
   return &tokenizer->base;
 }
