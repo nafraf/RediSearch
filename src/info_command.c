@@ -138,8 +138,8 @@ int IndexInfoCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     if (FIELD_IS(fs, INDEXFLD_T_FULLTEXT)) {
       REPLY_KVNUM(SPEC_WEIGHT_STR, fs->ftWeight);
 
-      if(fs->separators != NULL) {
-        REPLY_KVSTR(SPEC_SEPARATORS_STR, fs->separators->separatorString);
+      if(fs->delimiters != NULL) {
+        ReplyWithDelimiterList(reply, fs->delimiters);
       }
     }
 
@@ -245,8 +245,8 @@ int IndexInfoCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     ReplyWithStopWordsList(reply, sp->stopwords);
   }
 
-  if (sp->flags & Index_HasCustomSeparators) {
-      ReplyWithSeparatorList(reply, sp->separators);
+  if (sp->flags & Index_HasCustomDelimiters) {
+      ReplyWithDelimiterList(reply, sp->delimiters);
   }
 
   REPLY_KVMAP("dialect_stats");

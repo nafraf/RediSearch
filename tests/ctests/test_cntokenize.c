@@ -69,7 +69,6 @@ static int testCnTokenize(void) {
   char *cnTxt = getFile("cn_sample.txt");
   RSTokenizer *cnTok = NewChineseTokenizer(NULL, NULL, 0, NULL);
   ASSERT(cnTok != NULL);
-  // TODO: Check fieldSeparatorList argument
   cnTok->Start(cnTok, cnTxt, strlen(cnTxt), 0, NULL);
   Token t;
   uint32_t pos;
