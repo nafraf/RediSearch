@@ -6,7 +6,7 @@ from RLTest import Env
 
 _defaultDelimiters = '\t !\"#$%&\'()*+,-./:;<=>?@[]^`{|}~'
 
-def test01_Delimiters(env):
+def test01_IndexDelimiters(env):
     # Index with custom delimiters with escaped characters
     # the delimiters characters are printed ordered by its ASCII code
     env.expect(
@@ -35,6 +35,28 @@ def test01_Delimiters(env):
         'SCHEMA', 'foo', 'text').ok()
     assertInfoField(env, 'idx1', 'delimiters', '\t !\"#$%&\'()*+,-./:;<=>?@[]^`{|}~')
     env.execute_command('FT.DROPINDEX', 'idx1')
+
+    # # TODO:
+    # # Multiple rules for index level delimiters
+    # env.expect(
+    #     'FT.CREATE', 'idx1', 'ON', 'HASH',
+    #     'DELIMITERS', '', 'DELIMITERS+', 'a', 'DELIMITERS+', 'b',
+    #     'PREFIX', '1', 'customer:',
+    #     'SCHEMA',
+    #     'field1', 'TEXT').equal('OK')
+    # waitForIndex(env, 'idx1')
+    # assertInfoField(env, 'idx1', 'delimiters', 'ab')
+    # env.execute_command('FT.DROPINDEX', 'idx1')
+
+    # env.expect(
+    #     'FT.CREATE', 'idx1', 'ON', 'HASH',
+    #     'DELIMITERS', 'abcd', 'DELIMITERS-', 'a', 'DELIMITERS-', 'b',
+    #     'PREFIX', '1', 'customer:',
+    #     'SCHEMA',
+    #     'field1', 'TEXT').equal('OK')
+    # waitForIndex(env, 'idx1')
+    # assertInfoField(env, 'idx1', 'delimiters', 'cd')
+
 
 def test02_IndexOnHashWithCustomDelimiter(env):
     conn = getConnectionByEnv(env)
@@ -318,7 +340,7 @@ def test07_SummarizeCustomDelimiterByField(env):
 
     env.execute_command('FT.DROPINDEX', 'idx')
 
-def test08_IndexDelimitersConfig(env):
+def test08_FieldDelimitersConfig(env):
 
     # Index with custom delimiters by field, single rule by field
     env.expect(
@@ -352,7 +374,7 @@ def test08_IndexDelimitersConfig(env):
         env.assertEqual(res[7][2][8], 'delimiters')
         env.assertEqual(res[7][2][9], _defaultDelimiters)
 
-def test09_IndexDelimitersConfigMultipleRules(env):
+def test09_FieldDelimitersConfigMultipleRules(env):
 
     # Index with custom delimiters by field, multiple rules by field
     env.expect(
@@ -367,7 +389,12 @@ def test09_IndexDelimitersConfigMultipleRules(env):
         'field3', 'TEXT', 'DELIMITERS+', '??z??', 'DELIMITERS-', 'zxy',
         'SORTABLE',
         'field4', 'TEXT', 'DELIMITERS+', '',
-        'SORTABLE').equal('OK')
+        'SORTABLE',
+        'field5', 'TEXT', 'DELIMITERS+', '??z??', 'DELIMITERS+', 'zxy',
+        'SORTABLE',
+        'field6', 'TEXT', 'DELIMITERS', 'abcd*', 'DELIMITERS-', 'b',
+        'DELIMITERS-', '*', 'SORTABLE',
+        ).equal('OK')
     waitForIndex(env, 'idx2')
 
     assertInfoField(env, 'idx2', 'delimiters', '')
@@ -391,3 +418,11 @@ def test09_IndexDelimitersConfigMultipleRules(env):
         env.assertEqual(res[7][3][1], 'field4')
         env.assertEqual(res[7][3][8], 'delimiters')
         env.assertEqual(res[7][3][9], '')
+        # field5 delimiters
+        env.assertEqual(res[7][4][1], 'field5')
+        env.assertEqual(res[7][4][8], 'delimiters')
+        env.assertEqual(res[7][4][9], '?xyz')
+        # field6 delimiters
+        env.assertEqual(res[7][5][1], 'field6')
+        env.assertEqual(res[7][5][8], 'delimiters')
+        env.assertEqual(res[7][5][9], 'acd')
