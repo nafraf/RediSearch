@@ -5,7 +5,6 @@
  */
 
 #include "fragmenter.h"
-#include "toksep.h"
 #include "tokenize.h"
 #include "util/minmax.h"
 #include <ctype.h>
@@ -118,7 +117,7 @@ void FragmentList_FragmentizeBuffer(FragmentList *fragList, const char *doc, Ste
   fragList->doc = doc;
   fragList->docLen = strlen(doc);
   RSTokenizer *tokenizer = NewSimpleTokenizer(stemmer, stopwords, TOKENIZE_NOMODIFY, NULL);
-  tokenizer->Start(tokenizer, (char *)fragList->doc, fragList->docLen, 0);
+  tokenizer->Start(tokenizer, (char *)fragList->doc, fragList->docLen, 0, NULL);
   Token tokInfo;
   while (tokenizer->Next(tokenizer, &tokInfo)) {
     extractToken(fragList, &tokInfo, terms, numTerms);
@@ -287,7 +286,7 @@ static int sortByOrder(const void *pa, const void *pb) {
 static void FragmentList_FindContext(const FragmentList *fragList, const Fragment *frag,
                                      const char *limitBefore, const char *limitAfter,
                                      size_t contextSize, struct iovec *before,
-                                     struct iovec *after) {
+                                     struct iovec *after, const DelimiterList *dl) {
 
   if (limitBefore == NULL) {
     limitBefore = fragList->doc;
@@ -325,21 +324,21 @@ static void FragmentList_FindContext(const FragmentList *fragList, const Fragmen
   // Find the context immediately prior to our fragment, this means to advance
   // the cursor as much as possible until a separator is reached, and then
   // seek past that separator (if there are separators)
-  for (; limitBefore < frag->buf && !istoksep(*limitBefore, NULL); limitBefore++) {
+  for (; limitBefore < frag->buf && !istoksep(*limitBefore, dl); limitBefore++) {
     // Found a separator.
   }
-  for (; limitBefore < frag->buf && istoksep(*limitBefore, NULL); limitBefore++) {
+  for (; limitBefore < frag->buf && istoksep(*limitBefore, dl); limitBefore++) {
     // Strip away future separators
   }
   before->iov_base = (void *)limitBefore;
   before->iov_len = frag->buf - limitBefore;
 
   // Do the same for the 'after' context.
-  for (; limitAfter > frag->buf + frag->len && !istoksep(*limitAfter, NULL); limitAfter--) {
+  for (; limitAfter > frag->buf + frag->len && !istoksep(*limitAfter, dl); limitAfter--) {
     // Found a separator
   }
 
-  for (; limitAfter > frag->buf + frag->len && istoksep(*limitAfter, NULL); limitAfter--) {
+  for (; limitAfter > frag->buf + frag->len && istoksep(*limitAfter, dl); limitAfter--) {
     // Seek to the end of the last non-separator word
   }
 
@@ -349,7 +348,7 @@ static void FragmentList_FindContext(const FragmentList *fragList, const Fragmen
 
 void FragmentList_HighlightFragments(FragmentList *fragList, const HighlightTags *tags,
                                      size_t contextSize, Array *iovArrList, size_t niovs,
-                                     int order) {
+                                     int order, const DelimiterList *dl) {
 
   const Fragment *frags = FragmentList_GetFragments(fragList);
   niovs = Min(niovs, fragList->numFrags);
@@ -393,7 +392,7 @@ void FragmentList_HighlightFragments(FragmentList *fragList, const HighlightTags
 
     struct iovec before, after;
     FragmentList_FindContext(fragList, curFrag, beforeLimit, afterLimit, contextSize, &before,
-                             &after);
+                             &after, dl);
     addToIov(before.iov_base, before.iov_len, curArr);
     Fragment_WriteIovs(curFrag, tags->openTag, openLen, tags->closeTag, closeLen, curArr, NULL);
     addToIov(after.iov_base, after.iov_len, curArr);
@@ -421,7 +420,8 @@ void FragmentList_Free(FragmentList *fragList) {
  *    noting the terms for each.
  */
 void FragmentList_FragmentizeIter(FragmentList *fragList, const char *doc, size_t docLen,
-                                  FragmentTermIterator *iter, int options) {
+                                  FragmentTermIterator *iter, int options,
+                                  const DelimiterList *dl) {
   fragList->docLen = docLen;
   fragList->doc = doc;
   FragmentTerm *curTerm;
@@ -450,7 +450,7 @@ void FragmentList_FragmentizeIter(FragmentList *fragList, const char *doc, size_
       len = curTerm->len;
     } else {
       len = 0;
-      for (size_t ii = curTerm->bytePos; ii < fragList->docLen && !istoksep(doc[ii], NULL); ++ii, ++len) {
+      for (size_t ii = curTerm->bytePos; ii < fragList->docLen && !istoksep(doc[ii], dl); ++ii, ++len) {
       }
     }
 
