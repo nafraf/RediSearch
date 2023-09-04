@@ -111,9 +111,11 @@ void QueryNode_Free(QueryNode *n) {
       QueryVectorNode_Free(&n->vn);
       break;
     case QN_WILDCARD_QUERY:
+    case QN_RAW_STRING_QUERY:
       QueryTokenNode_Free(&n->verb.tok);
       break;
     case QN_WILDCARD:
+    case QN_RAW_STRING:
     case QN_IDS:
       break;
     case QN_TAG:
@@ -252,6 +254,24 @@ QueryNode *NewWildcardNode_WithParams(QueryParseCtx *q, QueryToken *qt) {
     QueryNode_InitParams(ret, 1);
     QueryNode_SetParam(q, &ret->params[0], &ret->verb.tok.str, &ret->verb.tok.len, qt);
     ret->params[0].type = PARAM_WILDCARD;
+  }
+  return ret;
+}
+
+QueryNode *NewRawStringNode_WithParams(QueryParseCtx *q, QueryToken *qt) {
+  QueryNode *ret = NewQueryNode(QN_RAW_STRING_QUERY);
+  q->numTokens++;
+  if (qt->type == QT_RAW_STRING) {
+    // ensure str is NULL terminated
+    char *s = rm_malloc(qt->len + 1);
+    memcpy(s, qt->s, qt->len);
+    s[qt->len] = '\0';
+    ret->verb.tok = (RSToken){.str = s, .len = qt->len, .expanded = 0, .flags = 0};
+  } else {
+    assert(qt->type == QT_PARAM_RAW_STRING);
+    QueryNode_InitParams(ret, 1);
+    QueryNode_SetParam(q, &ret->params[0], &ret->verb.tok.str, &ret->verb.tok.len, qt);
+    ret->params[0].type = PARAM_RAW_STRING;
   }
   return ret;
 }
@@ -453,7 +473,7 @@ IndexIterator *Query_EvalTokenNode(QueryEvalCtx *q, QueryNode *qn) {
 
   RSQueryTerm *term = NewQueryTerm(&qn->tn, q->tokenId++);
 
-  // printf("Opening reader.. `%s` FieldMask: %llx\n", term->str, EFFECTIVE_FIELDMASK(q, qn));
+  printf("Query_EvalTokenNode - Opening reader.. `%s` FieldMask: %llx\n", term->str, EFFECTIVE_FIELDMASK(q, qn));
 
   IndexReader *ir = Redis_OpenReader(q->sctx, term, q->docTable, isSingleWord,
                                      EFFECTIVE_FIELDMASK(q, qn), q->conc, qn->opts.weight);
@@ -1245,6 +1265,9 @@ static IndexIterator *query_EvalSingleTagNode(QueryEvalCtx *q, TagIndex *idx, Qu
     case QN_PREFIX:
       return Query_EvalTagPrefixNode(q, idx, n, iterout, weight, FieldSpec_HasSuffixTrie(fs));
 
+    // case QN_RAW_STRING_QUERY:
+    //   return Query_EvalTagUnescapedNode(q, idx, n, iterout, weight);
+
     case QN_WILDCARD_QUERY:
       return Query_EvalTagWildcardNode(q, idx, n, iterout, weight);
 
@@ -1372,6 +1395,10 @@ IndexIterator *Query_EvalNode(QueryEvalCtx *q, QueryNode *n) {
       return Query_EvalVectorNode(q, n);
     case QN_IDS:
       return Query_EvalIdFilterNode(q, &n->fn);
+    // case QN_RAW_STRING:
+    //   return Query_EvalRawStringNode(q, n);
+    // case QN_RAW_STRING_QUERY:
+    //   return Query_EvalRawStringQueryNode(q,n);
     case QN_WILDCARD:
       return Query_EvalWildcardNode(q, n);
     case QN_WILDCARD_QUERY:
@@ -1512,6 +1539,8 @@ int QueryNode_EvalParams(dict *params, QueryNode *n, QueryError *status) {
     case QN_FUZZY:
     case QN_OPTIONAL:
     case QN_IDS:
+    case QN_RAW_STRING:
+    case QN_RAW_STRING_QUERY:
     case QN_WILDCARD:
     case QN_WILDCARD_QUERY:
     case QN_GEOMETRY:
@@ -1566,6 +1595,8 @@ int QueryNode_CheckIsValid(QueryNode *n, IndexSpec *spec, RSSearchOptions *opts,
     case QN_GEO:
     case QN_PREFIX:
     case QN_IDS:
+    case QN_RAW_STRING:
+    case QN_RAW_STRING_QUERY:
     case QN_WILDCARD:
     case QN_WILDCARD_QUERY:
     case QN_TAG:
@@ -1602,7 +1633,8 @@ void QueryNode_AddChildren(QueryNode *n, QueryNode **children, size_t nchildren)
       QueryNode *child = children[ii];
       if (child->type == QN_TOKEN || child->type == QN_PHRASE ||
           child->type == QN_PREFIX || child->type == QN_LEXRANGE ||
-          child->type == QN_WILDCARD_QUERY) {
+          child->type == QN_WILDCARD_QUERY ||
+          child->type == QN_RAW_STRING_QUERY) {
         n->children = array_ensure_append(n->children, children + ii, 1, QueryNode *);
         for(size_t jj = 0; jj < QueryNode_NumParams(child); ++jj) {
           Param *p = child->params + jj;
@@ -1802,11 +1834,17 @@ static sds QueryNode_DumpSds(sds s, const IndexSpec *spec, const QueryNode *qs, 
     case QN_WILDCARD:
       s = sdscat(s, "<WILDCARD>");
       break;
+    case QN_RAW_STRING:
+      s = sdscat(s, "<RAW_STRING>");
+      break;
     case QN_FUZZY:
       s = sdscatprintf(s, "FUZZY{%s}\n", qs->fz.tok.str);
       return s;
     case QN_WILDCARD_QUERY:
       s = sdscatprintf(s, "WILDCARD{%s}\n", qs->verb.tok.str);
+      break;
+    case QN_RAW_STRING_QUERY:
+      s = sdscatprintf(s, "RAW_STRING{%s}\n", qs->verb.tok.str);
       break;
     case QN_NULL:
       s = sdscat(s, "<empty>");

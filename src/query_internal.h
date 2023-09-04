@@ -74,6 +74,7 @@ QueryNode *NewVectorNode_WithParams(struct QueryParseCtx *q, VectorQueryType typ
 QueryNode *NewTagNode(const char *tag, size_t len);
 QueryNode *NewVerbatimNode_WithParams(QueryParseCtx *q, QueryToken *qt);
 QueryNode *NewWildcardNode_WithParams(QueryParseCtx *q, QueryToken *qt);
+QueryNode *NewRawStringNode_WithParams(QueryParseCtx *q, QueryToken *qt);
 
 QueryNode *NewTokenNode_WithParams(QueryParseCtx *q, QueryToken *qt);
 void QueryNode_InitParams(QueryNode *n, size_t num);

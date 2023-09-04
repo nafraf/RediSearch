@@ -31,6 +31,7 @@ typedef enum {
   QT_NUMERIC,
   QT_SIZE,
   QT_WILDCARD,
+  QT_RAW_STRING,
   // Parameterized types
   QT_PARAM_ANY,
   QT_PARAM_TERM,
@@ -43,6 +44,7 @@ typedef enum {
   QT_PARAM_GEO_UNIT,
   QT_PARAM_VEC,
   QT_PARAM_WILDCARD,
+  QT_PARAM_RAW_STRING,
 } QueryTokenType;
 
 /* A token in the process of parsing a query. Unlike the document tokenizer,  it

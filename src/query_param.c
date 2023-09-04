@@ -132,6 +132,9 @@ bool QueryParam_SetParam(QueryParseCtx *q, Param *target_param, void *target_val
   case QT_PARAM_WILDCARD:
     type = PARAM_WILDCARD;
     break;
+  case QT_PARAM_RAW_STRING:
+    type = PARAM_RAW_STRING;
+    break;
   }
   target_param->type = type;
   target_param->target = target_value;

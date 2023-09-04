@@ -38,6 +38,7 @@
 %left PERCENT.
 %left ATTRIBUTE.
 %left VERBATIM WILDCARD.
+%left RAW_STRING.
 
 // Thanks to these fallback directives, Any "as" appearing in the query,
 // other than in a vector_query, Will either be considered as a term,
@@ -673,6 +674,10 @@ affix(A) ::= CONTAINS(B) . {
 
 verbatim(A) ::= WILDCARD(B) . {
     A = NewWildcardNode_WithParams(ctx, &B);
+}
+
+verbatim(A) ::= RAW_STRING(B) . {
+    A = NewRawStringNode_WithParams(ctx, &B);
 }
 
 /////////////////////////////////////////////////////////////////

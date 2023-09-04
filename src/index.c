@@ -1893,6 +1893,7 @@ PRINT_PROFILE_FUNC(printUnionIt) {
   case QN_NUMERIC : unionTypeStr = "NUMERIC"; break;
   case QN_LEXRANGE : unionTypeStr = "LEXRANGE"; break;
   case QN_WILDCARD_QUERY : unionTypeStr = "WILDCARD"; break;
+  case QN_RAW_STRING_QUERY : unionTypeStr = "RAW_STRING"; break;
   default:
     RS_LOG_ASSERT(0, "Invalid type for union");
     break;
@@ -2035,6 +2036,7 @@ typedef struct {
 PRINT_PROFILE_SINGLE(printNotIt, NotIterator, "NOT", 1);
 PRINT_PROFILE_SINGLE(printOptionalIt, OptionalIterator, "OPTIONAL", 1);
 PRINT_PROFILE_SINGLE(printWildcardIt, DummyIterator, "WILDCARD", 0);
+PRINT_PROFILE_SINGLE(printUnescapedIt, DummyIterator, "RAW_STRING", 0);
 PRINT_PROFILE_SINGLE(printIdListIt, DummyIterator, "ID-LIST", 0);
 PRINT_PROFILE_SINGLE(printEmptyIt, DummyIterator, "EMPTY", 0);
 PRINT_PROFILE_SINGLE(printHybridIt, HybridIterator, "VECTOR", 1);

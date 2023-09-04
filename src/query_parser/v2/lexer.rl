@@ -60,6 +60,7 @@ suffix = (star.term | star.number | star.attr) $1;
 as = 'AS'|'aS'|'As'|'as';
 verbatim = squote . ((any - squote - escape) | escape.any)+ . squote $4;
 wildcard = 'w' . verbatim $4;
+raw_string = 'r' . verbatim $4;
 
 main := |*
 
@@ -89,6 +90,7 @@ main := |*
     tok.pos = ts-q->raw;
     tok.len = te - (ts + 1);
     tok.s = ts+1;
+    printf("mod: %.*s\n", (int)tok.len, tok.s);
     RSQuery_Parse_v2(pParser, MODIFIER, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
@@ -98,6 +100,7 @@ main := |*
     tok.pos = ts-q->raw;
     tok.len = te - (ts + 1);
     tok.s = ts+1;
+    printf("attr: %.*s\n", (int)tok.len, tok.s);
     RSQuery_Parse_v2(pParser, ATTRIBUTE, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
@@ -241,6 +244,7 @@ main := |*
     tok.s = ts;
     tok.numval = 0;
     tok.pos = ts-q->raw;
+    printf("term: %.*s\n", (int)tok.len, tok.s);
     RSQuery_Parse_v2(pParser, TERM, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
@@ -296,6 +300,7 @@ main := |*
     tok.len = te - (ts + 2 + is_attr);
     tok.s = ts + 1 + is_attr;
     tok.numval = 0;
+    printf("verbatim: %.*s\n", (int)tok.len, tok.s);
     RSQuery_Parse_v2(pParser, VERBATIM, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
@@ -309,7 +314,22 @@ main := |*
     tok.len = te - (ts + 3 + is_attr);
     tok.s = ts + 2 + is_attr;
     tok.numval = 0;
+    printf("wildcard: %.*s\n", (int)tok.len, tok.s);
     RSQuery_Parse_v2(pParser, WILDCARD, tok, q);
+    if (!QPCTX_ISOK(q)) {
+      fbreak;
+    }
+  };
+
+  raw_string => {
+    int is_attr = (*(ts+2) == '$') ? 1 : 0;
+    tok.type = is_attr ? QT_PARAM_RAW_STRING : QT_RAW_STRING;
+    tok.pos = ts-q->raw + 2;
+    tok.len = te - (ts + 3 + is_attr);
+    tok.s = ts + 2 + is_attr;
+    tok.numval = 0;
+    printf("raw_string: %.*s\n", (int)tok.len, tok.s);
+    RSQuery_Parse_v2(pParser, RAW_STRING, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
     }
