@@ -58,7 +58,11 @@ void ReplyWithDelimiterList(RedisModule_Reply *reply, struct DelimiterList *dl);
 void AddDelimiterListToInfo(RedisModuleInfoCtx *ctx, struct DelimiterList *dl);
 #endif
 
+/* separate by token a raw string, escape delimiters using backslash */
 char *toksep(char **s, size_t *tokLen, const DelimiterList *dl);
+
+/* separate by token a raw string, escaping is not possible*/
+char *toksep_rawstring(char **s, size_t *tokLen, const DelimiterList *dl);
 
 /* Check if c if part of the delimiter list dl*/
 int istoksep(int c, const DelimiterList *dl);

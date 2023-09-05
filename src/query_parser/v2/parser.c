@@ -1854,7 +1854,7 @@ yylhsminor.yy13 = yymsp[0].minor.yy13;
         break;
       case 43: /* verbatim ::= RAW_STRING */
 {
-    yylhsminor.yy13 = NewRawStringNode_WithParams(ctx, &yymsp[0].minor.yy0);
+  yylhsminor.yy13 = NewRawStringNode_WithParams(ctx, &yymsp[0].minor.yy0);
 }
   yymsp[0].minor.yy13 = yylhsminor.yy13;
         break;

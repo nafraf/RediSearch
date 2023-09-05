@@ -224,6 +224,7 @@ void AddDelimiterListToInfo(RedisModuleInfoCtx* ctx, DelimiterList *dl) {
 }
 #endif
 
+
 /**
  * Function reads string pointed to by `s` and indicates the length of the next
  * token in `tokLen`. `s` is set to NULL if this is the last token.
@@ -239,6 +240,32 @@ char *toksep(char **s, size_t *tokLen, const DelimiterList *dl) {
       c = __defaultDelimiterMap[*pos];
     }
     if (c && ((char *)pos == orig || *(pos - 1) != '\\')) {
+      *s = (char *)++pos;
+      *tokLen = ((char *)pos - orig) - 1;
+      if (!*pos) {
+        *s = NULL;
+      }
+      return orig;
+    }
+  }
+
+  // Didn't find a terminating token. Use a simpler length calculation
+  *s = NULL;
+  *tokLen = (char *)pos - orig;
+  return orig;
+}
+
+char *toksep_rawstring(char **s, size_t *tokLen, const DelimiterList *dl) {
+  char c;
+  uint8_t *pos = (uint8_t *)*s;
+  char *orig = *s;
+  for (; *pos; ++pos) {
+    if(dl != NULL) {
+      c = dl->delimiterMap[*pos];
+    } else {
+      c = __defaultDelimiterMap[*pos];
+    }
+    if (c && ((char *)pos == orig)) {
       *s = (char *)++pos;
       *tokLen = ((char *)pos - orig) - 1;
       if (!*pos) {

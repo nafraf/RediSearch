@@ -49,7 +49,7 @@ typedef enum {
   /* Wildcard node, used only in conjunction with negative root node to allow negative queries */
   QN_WILDCARD,
 
-  /* Raw string node */
+  /* Raw string node, unused? */
   QN_RAW_STRING,
 
   /* Tag node, a list of tags for a specific tag field */
@@ -67,7 +67,7 @@ typedef enum {
   /* Wildcard */
   QN_WILDCARD_QUERY,
 
-  /* Unescaped */
+  /* Raw string node query */
   QN_RAW_STRING_QUERY,
 
   /* Null term - take no action */
