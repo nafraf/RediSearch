@@ -420,18 +420,21 @@ static void expandCn(RSQueryExpanderCtx *ctx, RSToken *token) {
   }
 
   tokenizer = dd->data.cn.tokenizer;
-  Vector *tokVec = dd->data.cn.tokList;
+  // Vector *tokVec = dd->data.cn.tokList;
 
-  tokVec->top = 0;
+  // tokVec->top = 0;
   tokenizer->Start(tokenizer, token->str, token->len, 0);
 
   Token tTok = {0};
   while (tokenizer->Next(tokenizer, &tTok)) {
     char *s = rm_strndup(tTok.tok, tTok.tokLen);
-    Vector_Push(tokVec, s);
+    // Vector_Push(tokVec, s);
+    ctx->ExpandToken(ctx, s, strlen(s), token->flags);
   }
 
-  ctx->ExpandTokenWithPhrase(ctx, (const char **)tokVec->data, tokVec->top, token->flags, 0, 0);
+  // Nafraf: When should we use ExpandTokenWithPhrase?
+  // ctx->ExpandTokenWithPhrase(ctx, (const char **)tokVec->data, tokVec->top, token->flags, 0, 0);
+  // ctx->ExpandToken(ctx, token->str, token->len, token->flags);
 }
 
 /******************************************************************************************
