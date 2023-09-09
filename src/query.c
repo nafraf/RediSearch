@@ -475,6 +475,42 @@ IndexIterator *Query_EvalTokenNode(QueryEvalCtx *q, QueryNode *qn) {
 
   RSQueryTerm *term = NewQueryTerm(&qn->tn, q->tokenId++);
 
+  // Get tokens using custom delimiters
+  IndexSpec *spec = q->sctx->spec;
+  sds fieldname = QueryNode_GetFieldName(sdsnew(""), (const IndexSpec *) spec,
+                                          (const QueryNode*) qn, 0);
+
+  if(fieldname && strlen(fieldname) > 0) {
+    printf("Nafraf: fieldname:%.*s\n", (int)strlen(fieldname), fieldname);
+
+    FieldSpec *fs = IndexSpec_GetField(spec, fieldname, strlen(fieldname));
+
+    char *p = rm_strdup(term->str);
+    int i = 0;
+    while (p) {
+      // get the next token
+      size_t toklen;
+      char *tok = NULL;
+
+      if (FieldSpec_HasCustomDelimiters(fs)) {
+        tok = toksep(&p, &toklen, fs->delimiters);
+      } else {
+        tok = toksep(&p, &toklen, spec->delimiters);
+      }
+
+      // this means we're at the end
+      if (tok == NULL) break;
+
+      if (toklen > 0) {
+        tok[toklen] = '\0';
+        printf("Nafraf: token[%02d]: %s\n", ++i, tok);
+      }
+
+    }
+    rm_free(p);
+  }
+
+
   printf("Query_EvalTokenNode - Opening reader.. `%s` FieldMask: %llx\n", term->str, EFFECTIVE_FIELDMASK(q, qn));
 
   IndexReader *ir = Redis_OpenReader(q->sctx, term, q->docTable, isSingleWord,
@@ -642,6 +678,7 @@ static IndexIterator *Query_EvalRawStringQueryNode(QueryEvalCtx *q, QueryNode *q
 
   RSQueryTerm *term = NewQueryTerm(&qn->tn, q->tokenId++);
 
+  // Get tokens using custom delimiters
   sds fieldname = QueryNode_GetFieldName(sdsnew(""), (const IndexSpec *) spec,
                                           (const QueryNode*) qn, 0);
 
@@ -1524,7 +1561,9 @@ int QAST_Parse(QueryAST *dst, const RedisSearchCtx *sctx, const RSSearchOptions 
                          .trace_log = NULL
 #endif
   };
-  if (dialectVersion >= 2)
+  if (dialectVersion == 5) {
+    dst->root = RSQuery_ParseRaw_v3(&qpCtx);
+  } else if (dialectVersion >= 2)
     dst->root = RSQuery_ParseRaw_v2(&qpCtx);
   else
     dst->root = RSQuery_ParseRaw_v1(&qpCtx);
