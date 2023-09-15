@@ -177,36 +177,36 @@ void Ext_ExpandToken(struct RSQueryExpanderCtx *ctx, const char *str, size_t len
 /* The implementation of the actual query expansion. This function either turns the current node
  * into a union node with the original token node and new token node as children. Or if it is
  * already a union node (in consecutive calls), it just adds a new token node as a child to it */
-void Ext_ExpandTokenWithPhrase(struct RSQueryExpanderCtx *ctx, const char **toks, size_t num,
-                               RSTokenFlags flags, int replace, int exact) {
+// void Ext_ExpandTokenWithPhrase(struct RSQueryExpanderCtx *ctx, const char **toks, size_t num,
+//                                RSTokenFlags flags, int replace, int exact) {
 
-  QueryAST *q = ctx->qast;
-  QueryNode *qn = *ctx->currentNode;
+//   QueryAST *q = ctx->qast;
+//   QueryNode *qn = *ctx->currentNode;
 
-  QueryNode *ph = NewPhraseNode(exact);
-  for (size_t i = 0; i < num; i++) {
-    QueryNode_AddChild(ph, NewTokenNodeExpanded(q, toks[i], strlen(toks[i]), flags));
-  }
+//   QueryNode *ph = NewPhraseNode(exact);
+//   for (size_t i = 0; i < num; i++) {
+//     QueryNode_AddChild(ph, NewTokenNodeExpanded(q, toks[i], strlen(toks[i]), flags));
+//   }
 
-  // if we're replacing - just set the expanded phrase instead of the token
-  if (replace) {
-    QueryNode_Free(qn);
+//   // if we're replacing - just set the expanded phrase instead of the token
+//   if (replace) {
+//     QueryNode_Free(qn);
 
-    *ctx->currentNode = ph;
-  } else {
+//     *ctx->currentNode = ph;
+//   } else {
 
-    /* Replace current node with a new union node if needed */
-    if (qn->type != QN_UNION) {
-      QueryNode *un = NewUnionNode();
+//     /* Replace current node with a new union node if needed */
+//     if (qn->type != QN_UNION) {
+//       QueryNode *un = NewUnionNode();
 
-      /* Append current node to the new union node as a child */
-      QueryNode_AddChild(un, qn);
-      *ctx->currentNode = un;
-    }
-    /* Now the current node must be a union node - so we just add a new token node to it */
-    QueryNode_AddChild(*ctx->currentNode, ph);
-  }
-}
+//       /* Append current node to the new union node as a child */
+//       QueryNode_AddChild(un, qn);
+//       *ctx->currentNode = un;
+//     }
+//     /* Now the current node must be a union node - so we just add a new token node to it */
+//     QueryNode_AddChild(*ctx->currentNode, ph);
+//   }
+// }
 
 /* Set the query payload */
 void Ext_SetPayload(struct RSQueryExpanderCtx *ctx, RSPayload payload) {
@@ -224,7 +224,7 @@ ExtQueryExpanderCtx *Extensions_GetQueryExpander(RSQueryExpanderCtx *ctx, const 
   if (p && (void *)p != TRIEMAP_NOTFOUND) {
     ctx->ExpandToken = Ext_ExpandToken;
     ctx->SetPayload = Ext_SetPayload;
-    ctx->ExpandTokenWithPhrase = Ext_ExpandTokenWithPhrase;
+    // ctx->ExpandTokenWithPhrase = Ext_ExpandTokenWithPhrase;
     ctx->privdata = p->privdata;
     return p;
   }

@@ -401,7 +401,6 @@ typedef struct {
   union {
     struct {
       RSTokenizer *tokenizer;
-      Vector *tokList;
     } cn;
     struct sb_stemmer *latin;
   } data;
@@ -416,25 +415,18 @@ static void expandCn(RSQueryExpanderCtx *ctx, RSToken *token) {
   }
   if (!dd->data.cn.tokenizer) {
     tokenizer = dd->data.cn.tokenizer = NewChineseTokenizer(NULL, NULL, 0);
-    dd->data.cn.tokList = NewVector(char *, 4);
   }
 
   tokenizer = dd->data.cn.tokenizer;
-  // Vector *tokVec = dd->data.cn.tokList;
-
-  // tokVec->top = 0;
+  
   tokenizer->Start(tokenizer, token->str, token->len, 0);
 
   Token tTok = {0};
   while (tokenizer->Next(tokenizer, &tTok)) {
     char *s = rm_strndup(tTok.tok, tTok.tokLen);
-    // Vector_Push(tokVec, s);
     ctx->ExpandToken(ctx, s, strlen(s), token->flags);
   }
 
-  // Nafraf: When should we use ExpandTokenWithPhrase?
-  // ctx->ExpandTokenWithPhrase(ctx, (const char **)tokVec->data, tokVec->top, token->flags, 0, 0);
-  // ctx->ExpandToken(ctx, token->str, token->len, token->flags);
 }
 
 /******************************************************************************************
@@ -497,7 +489,6 @@ void StemmerExpanderFree(void *p) {
   defaultExpanderCtx *dd = p;
   if (dd->isCn) {
     dd->data.cn.tokenizer->Free(dd->data.cn.tokenizer);
-    Vector_Free(dd->data.cn.tokList);
   } else if (dd->data.latin) {
     sb_stemmer_delete(dd->data.latin);
   }

@@ -186,8 +186,8 @@ typedef struct RSQueryExpanderCtx {
    * replace the original token with the new phrase. If exact is 1 the expanded phrase is an exact
    * match phrase
    */
-  void (*ExpandTokenWithPhrase)(struct RSQueryExpanderCtx *ctx, const char **toks, size_t num,
-                                RSTokenFlags flags, int replace, int exact);
+  // void (*ExpandTokenWithPhrase)(struct RSQueryExpanderCtx *ctx, const char **toks, size_t num,
+  //                               RSTokenFlags flags, int replace, int exact);
 
   /* SetPayload allows the query expander to set GLOBAL payload on the query (not unique per token)
    */

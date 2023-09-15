@@ -114,3 +114,71 @@ def testSynonym(env):
     r = env.cmd('ft.search', 'idx', '近义词', 'language', 'chinese')
     env.assertEqual(1, r[0])
     env.assertIn('doc1', r)
+
+def testExpandToken(env):
+    conn = getConnectionByEnv(env)
+
+    env.cmd('FT.CREATE', 'idx', 'ON', 'JSON', 'LANGUAGE', 'chinese', 
+            'SCHEMA', 
+            '$.title', 'AS', 'title', 'TEXT', 
+            '$.brand', 'AS', 'brand', 'TEXT',
+            '$.category', 'AS', 'category', 'TEXT')
+    waitForIndex(env, 'idx')
+    conn.execute_command(
+        'JSON.SET', 'doc:1', '$', 
+        r'{"title":"华为", "brand":"Technics", "category":"耳机"}')
+    conn.execute_command(
+        'JSON.SET', 'doc:2', '$',
+        r'{"title":"Earphones", "brand":"Technics", "category":"蓝牙/无线耳机"}')
+
+    # This returns results because it should expand to:
+    # 1) @title:UNION {
+    # 2)   @title:华为
+    # 3)   @title:华为(expanded)
+    # 4) }
+    r = env.cmd('FT.SEARCH', 'idx', '@title:(华为)', 'language', 'chinese')
+    env.assertEqual(1, r[0])
+    env.assertIn('doc:1', r)
+
+    # This does not return results because it should expand to:
+    # 1) @brand:UNION {
+    # 2)   @brand:华为
+    # 3)   @brand:华为(expanded)
+    # 4) }
+    r = env.cmd('FT.SEARCH', 'idx', '@brand:(华为)', 'language', 'chinese')
+    env.assertEqual(0, r[0])
+
+    # This returns results because it should expand to:
+    # 1) @category:UNION {
+    # 2)   @category:蓝牙耳机
+    # 3)   @category:蓝牙(expanded)
+    # 4)   @category:耳机(expanded)
+    # 5) }
+    r = env.cmd('FT.SEARCH', 'idx', '@category:(蓝牙耳机)', 'language', 'chinese')
+    env.assertEqual(2, r[0])
+
+    r = env.cmd('FT.SEARCH', 'idx', '@category:(耳机)', 'language', 'chinese')
+    env.assertEqual(2, r[0])
+
+    r = env.cmd('FT.SEARCH', 'idx', '@category:(蓝牙)', 'language', 'chinese')
+    env.assertEqual(1, r[0])
+
+    # This index uses TAG instead of TEXT, so it should not expand
+    env.cmd('FT.CREATE', 'idx2', 'ON', 'JSON', 'LANGUAGE', 'chinese', 
+            'SCHEMA', 
+            '$.title', 'AS', 'title', 'TEXT', 
+            '$.brand', 'AS', 'brand', 'TEXT',
+            '$.category', 'AS', 'category', 'TAG')
+    waitForIndex(env, 'idx2')
+
+    r = env.cmd('FT.SEARCH', 'idx2', '@category:{蓝牙耳机}', 'language', 'chinese')
+    env.assertEqual(0, r[0])
+
+    r = env.cmd('FT.SEARCH', 'idx2', '@category:{耳机}', 'language', 'chinese')
+    env.assertEqual(1, r[0])
+
+    r = env.cmd('FT.SEARCH', 'idx2', '@category:{蓝牙}', 'language', 'chinese')
+    env.assertEqual(0, r[0])
+
+    r = env.cmd('FT.SEARCH', 'idx2', '@category:{蓝牙\/无线耳机}', 'language', 'chinese')
+    env.assertEqual(1, r[0])
