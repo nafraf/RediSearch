@@ -321,6 +321,20 @@ main := |*
     }
   };
 
+  verbatim_term => {
+    int is_attr = (*(ts+2) == '$') ? 1 : 0;
+    tok.type = is_attr ? QT_PARAM_TERM : QT_TERM;
+    tok.pos = ts-q->raw;
+    tok.len = te - (ts + 2 + is_attr);
+    tok.s = ts + 1 + is_attr;
+    tok.numval = 0;
+    printf("verbatim_term: %.*s\n", (int)tok.len, tok.s);
+    RSQuery_Parse_v3(pParser, VERBATIM, tok, q);
+    if (!QPCTX_ISOK(q)) {
+      fbreak;
+    }
+  };
+
   wildcard => {
     int is_attr = (*(ts+2) == '$') ? 1 : 0;
     tok.type = is_attr ? QT_PARAM_WILDCARD : QT_WILDCARD;
