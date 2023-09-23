@@ -464,6 +464,7 @@ static void QueryNode_Expand(RSQueryTokenExpander expander, RSQueryExpanderCtx *
 }
 
 IndexIterator *Query_EvalTokenNode(QueryEvalCtx *q, QueryNode *qn) {
+  printf("Nafraf: Query_EvalTokenNode\n");
   if (qn->type != QN_TOKEN) {
     return NULL;
   }
@@ -511,7 +512,7 @@ IndexIterator *Query_EvalTokenNode(QueryEvalCtx *q, QueryNode *qn) {
   }
 
 
-  printf("Query_EvalTokenNode - Opening reader.. `%s` FieldMask: %llx\n", term->str, EFFECTIVE_FIELDMASK(q, qn));
+  // printf("Query_EvalTokenNode - Opening reader.. `%s` FieldMask: %llx\n", term->str, EFFECTIVE_FIELDMASK(q, qn));
 
   IndexReader *ir = Redis_OpenReader(q->sctx, term, q->docTable, isSingleWord,
                                      EFFECTIVE_FIELDMASK(q, qn), q->conc, qn->opts.weight);
@@ -1435,6 +1436,7 @@ static IndexIterator *query_EvalSingleTagNode(QueryEvalCtx *q, TagIndex *idx, Qu
 }
 
 static IndexIterator *Query_EvalTagNode(QueryEvalCtx *q, QueryNode *qn) {
+  printf("Nafraf: Query_EvalTagNode\n");
   if (qn->type != QN_TAG) {
     return NULL;
   }

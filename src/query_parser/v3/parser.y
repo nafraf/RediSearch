@@ -58,8 +58,8 @@
 
 %syntax_error {
   QueryError_SetErrorFmt(ctx->status, QUERY_ESYNTAX,
-    "Token: Syntax error at offset %d near %.*s",
-    TOKEN.pos, TOKEN.len, TOKEN.s);
+    "_Token: Syntax error at offset %d near %.*s type:%d",
+    TOKEN.pos, TOKEN.len, TOKEN.s, TOKEN.type);
 }
 
 %include {
@@ -120,6 +120,7 @@ static void setup_trace(QueryParseCtx *ctx) {
 }
 
 static void reportSyntaxError(QueryError *status, QueryToken* tok, const char *msg) {
+  printf("Nafraf: tok->type: %d\n", tok->type);
   if (tok->type == QT_TERM || tok->type == QT_TERM_CASE) {
     QueryError_SetErrorFmt(status, QUERY_ESYNTAX,
       "%s at offset %d near %.*s", msg, tok->pos, tok->len, tok->s);
@@ -560,6 +561,7 @@ text_expr(A) ::= text_expr(B) ARROW LB attribute_list(C) RB . {
 text_expr(A) ::= QUOTE termlist(B) QUOTE. [TERMLIST] {
   // TODO: Quoted/verbatim string in termlist should not be handled as parameters
   // Also need to add the leading '$' which was consumed by the lexer
+  printf("Nafraf: ParserV3 QUOTE termlist(B) QUOTE. [TERMLIST] \n");
   B->pn.exact = 1;
   B->opts.flags |= QueryNode_Verbatim;
 
@@ -567,6 +569,7 @@ text_expr(A) ::= QUOTE termlist(B) QUOTE. [TERMLIST] {
 }
 
 text_expr(A) ::= QUOTE term(B) QUOTE. [TERMLIST] {
+  printf("Nafraf: ParserV3 QUOTE term(B) QUOTE. [TERMLIST]  - NewTokenNode: %s\n", B.s);
   A = NewTokenNode(ctx, rm_strdupcase(B.s, B.len), -1);
   A->opts.flags |= QueryNode_Verbatim;
 }
@@ -577,6 +580,7 @@ text_expr(A) ::= QUOTE ATTRIBUTE(B) QUOTE. [TERMLIST] {
   char *s = rm_malloc(B.len + 1);
   *s = '$';
   memcpy(s + 1, B.s, B.len);
+  printf("Nafraf: ParserV3 QUOTE ATTRIBUTE(B) QUOTE. [TERMLIST]  - NewTokenNode: %s\n", s);
   A = NewTokenNode(ctx, rm_strdupcase(s, B.len + 1), -1);
   rm_free(s);
   A->opts.flags |= QueryNode_Verbatim;
@@ -595,6 +599,7 @@ A = B;
 }
 
 text_expr(A) ::= verbatim(B) . [VERBATIM]  {
+  printf("Nafraf: ParserV3 verbatim(B) . [VERBATIM]\n");
 A = B;
 }
 
@@ -731,6 +736,7 @@ expr(A) ::= modifier(B) COLON LB tag_list(C) RB . {
       // Tag field names must be case sensitive, we can't do rm_strdupcase
         char *s = rm_strndup(B.s, B.len);
         size_t slen = unescapen((char*)s, B.len);
+        printf("Nafraf: ParserV3 Case 0 - NewTagNode: %s\n", s);
 
         A = NewTagNode(s, slen);
         QueryNode_AddChildren(A, C->children, QueryNode_NumChildren(C));
@@ -740,6 +746,69 @@ expr(A) ::= modifier(B) COLON LB tag_list(C) RB . {
         QueryNode_Free(C);
     }
 }
+
+// This supports:
+// 127.0.0.1:6379>  FT.EXPLAINCLI idx "@a_tag:{:a1:}" DIALECT 5
+// 1) TAG:@a_tag {
+// 2)   a1
+// 3) }
+// A similar change should be done to support:
+// FT.EXPLAINCLI idx "@a_tag:{'a1'}" DIALECT 5
+expr(A) ::= modifier(B) COLON LB COLON tag_list(C) COLON RB . {
+    if (!C) {
+        A = NULL;
+    } else {
+      // Tag field names must be case sensitive, we can't do rm_strdupcase
+        char *s = rm_strndup(B.s, B.len);
+        size_t slen = unescapen((char*)s, B.len);
+        printf("Nafraf: ParserV3 Case COLON - NewTagNode: %s\n", s);
+
+        A = NewTagNode(s, slen);
+        QueryNode_AddChildren(A, C->children, QueryNode_NumChildren(C));
+
+        // Set the children count on C to 0 so they won't get recursively free'd
+        QueryNode_ClearChildren(C, 0);
+        QueryNode_Free(C);
+    }
+}
+
+expr(A) ::= modifier(B) COLON LB SEMICOLON tag_list(C) SEMICOLON RB . {
+    printf("Nafraf: ParserV3 Case SEMICOLON - Start \n");
+    if (!C) {
+        A = NULL;
+    } else {
+      // Tag field names must be case sensitive, we can't do rm_strdupcase
+        char *s = rm_strndup(B.s, B.len);
+        size_t slen = unescapen((char*)s, B.len);
+        printf("Nafraf: ParserV3 Case SEMICOLON - NewTagNode: %s\n", s);
+
+        A = NewTagNode(s, slen);
+        QueryNode_AddChildren(A, C->children, QueryNode_NumChildren(C));
+
+        // Set the children count on C to 0 so they won't get recursively free'd
+        QueryNode_ClearChildren(C, 0);
+        QueryNode_Free(C);
+    }
+}
+
+// expr(A) ::= modifier(B) COLON LB SQUOTE tag_list(C) SQUOTE RB . {
+//     printf("Nafraf: ParserV3 Case SQUOTE - Start \n");
+//     if (!C) {
+//         A = NULL;
+//     } else {
+//       // Tag field names must be case sensitive, we can't do rm_strdupcase
+//         char *s = rm_strndup(B.s, B.len);
+//         size_t slen = unescapen((char*)s, B.len);
+//         printf("Nafraf: ParserV3 Case SQUOTE - NewTagNode: %s\n", s);
+
+//         A = NewTagNode(s, slen);
+//         QueryNode_AddChildren(A, C->children, QueryNode_NumChildren(C));
+
+//         // Set the children count on C to 0 so they won't get recursively free'd
+//         QueryNode_ClearChildren(C, 0);
+//         QueryNode_Free(C);
+//     }
+// }
 
 tag_list(A) ::= param_term_case(B) . [TAGLIST] {
   A = NewPhraseNode(0);
@@ -752,11 +821,19 @@ tag_list(A) ::= affix(B) . [TAGLIST] {
 }
 
 tag_list(A) ::= verbatim(B) . [TAGLIST] {
+    printf("Nafraf: ParserV3 verbatim(B) . [TAGLIST] - NewPhraseNode\n");
+    A = NewPhraseNode(0);
+    QueryNode_AddChild(A, B);
+}
+
+tag_list(A) ::= SQUOTE verbatim(B) SQUOTE . [TAGLIST] {
+    printf("Nafraf: ParserV3 SQUOTE verbatim(B) SQUOTE . [TAGLIST] - NewPhraseNode\n");
     A = NewPhraseNode(0);
     QueryNode_AddChild(A, B);
 }
 
 tag_list(A) ::= termlist(B) . [TAGLIST] {
+    printf("Nafraf: ParserV3 termlist(B) . [TAGLIST] - NewPhraseNode\n");
     A = NewPhraseNode(0);
     QueryNode_AddChild(A, B);
 }

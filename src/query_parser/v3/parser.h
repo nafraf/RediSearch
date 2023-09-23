@@ -31,3 +31,4 @@
 #define RAW_STRING                      31
 #define AS_T                            32
 #define SEMICOLON                       33
+#define SQUOTE                          34
