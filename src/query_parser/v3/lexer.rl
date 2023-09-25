@@ -24,7 +24,7 @@
 void RSQuery_Parse_v3(void *yyp, int yymajor, QueryToken yyminor, QueryParseCtx *ctx);
 void *RSQuery_ParseAlloc_v3(void *(*mallocProc)(size_t));
 void RSQuery_ParseFree_v3(void *p, void (*freeProc)(void *));
-void RSQueryParser_v3_Trace(FILE *TraceFILE, char *zTracePrompt);
+
 
 /* verbatim = squote . ((any - squote - escape) | escape.any)+ . squote $4; */
   // verbatim => {
@@ -41,6 +41,20 @@ void RSQueryParser_v3_Trace(FILE *TraceFILE, char *zTracePrompt);
   //   }
   // };
 
+
+  //   verbatim_tag_term => {
+  //   tok.len = te - ( ts + 4);
+  //   tok.s = ts + 2;
+  //   tok.numval = 0;
+  //   tok.pos = ts-q->raw;
+  //   printf("verbatim_tag_term: %.*s\n", (int)tok.len, tok.s);
+  //   printf("TODO: This should send a verbatim_tag_term, to be processed as TAG, but I still get a Syntax Error.\n");
+  //   RSQuery_Parse_v3(pParser, TERM, tok, q);
+  //   if (!QPCTX_ISOK(q)) {
+  //     printf("Nafraf: Syntax Error verbatim_tag_term\n");
+  //     fbreak;
+  //   }
+  // };
 
 %%{
 
@@ -71,11 +85,9 @@ and = ",";
 escaped_character = escape (punct | space | escape);
 escaped_term = (((any - (punct | cntrl | space | escape)) | escaped_character) | '_')+  $0;
 verbatim_term = squote . ((any - squote - escape) | escape.any)+ . squote;
-verbatim_tag_term = lb . verbatim_term . rb $0;
-verbatim_txt_term = lp . verbatim_term . rp $0;
+verbatim_txt_term = lp . space . rp $0;
 verbatim_tag_list = lb . verbatim_term ( ( and | or) . verbatim_term)* . rb;
-verbatim_txt_list = lp . verbatim_term ( ( and | or) . verbatim_term)* . rp;
-term = (escaped_term | verbatim_tag_term | verbatim_txt_term);
+term = (escaped_term | verbatim_txt_term);
 fieldname = escaped_term $ 1;
 mod = '@'.escaped_term $ 1;
 attr = '$'.term $ 1;
@@ -84,8 +96,10 @@ prefix = (term.star | number.star | attr.star) $1;
 suffix = (star.term | star.number | star.attr) $1;
 as = 'AS'|'aS'|'As'|'as';
 
+raw_string = verbatim_term $4;
+raw_string2 = 'r' . verbatim_term $4;
 wildcard = 'w' . verbatim_term $4;
-raw_string = 'r' . verbatim_term $4;
+
 
 main := |*
 
@@ -273,19 +287,7 @@ main := |*
   punct;
   cntrl;
   
-  verbatim_tag_term => {
-    tok.len = te - ( ts + 4);
-    tok.s = ts + 2;
-    tok.numval = 0;
-    tok.pos = ts-q->raw;
-    printf("verbatim_tag_term: %.*s\n", (int)tok.len, tok.s);
-    printf("TODO: This should send a verbatim_tag_term, to be processed as TAG, but I still get a Syntax Error.\n");
-    RSQuery_Parse_v3(pParser, TERM, tok, q);
-    if (!QPCTX_ISOK(q)) {
-      printf("Nafraf: Syntax Error verbatim_tag_term\n");
-      fbreak;
-    }
-  };
+
 
   verbatim_txt_term => {
     tok.len = te - ( ts + 2);
@@ -366,21 +368,6 @@ main := |*
   };
 
 
-
-  verbatim_term => {
-    int is_attr = (*(ts+2) == '$') ? 1 : 0;
-    tok.type = is_attr ? QT_PARAM_TERM : QT_TERM;
-    tok.pos = ts-q->raw;
-    tok.len = te - (ts + 2 + is_attr);
-    tok.s = ts + 1 + is_attr;
-    tok.numval = 0;
-    printf("verbatim_term: %.*s\n", (int)tok.len, tok.s);
-    RSQuery_Parse_v3(pParser, VERBATIM, tok, q);
-    if (!QPCTX_ISOK(q)) {
-      fbreak;
-    }
-  };
-
   wildcard => {
     int is_attr = (*(ts+2) == '$') ? 1 : 0;
     tok.type = is_attr ? QT_PARAM_WILDCARD : QT_WILDCARD;
@@ -396,13 +383,26 @@ main := |*
   };
 
   raw_string => {
+    tok.type = QT_RAW_STRING;
+    tok.pos = ts-q->raw + 1;
+    tok.len = te - (ts + 2);
+    tok.s = ts + 1;
+    tok.numval = 0;
+    printf("raw_string: %.*s\n", (int)tok.len, tok.s);
+    RSQuery_Parse_v3(pParser, RAW_STRING, tok, q);
+    if (!QPCTX_ISOK(q)) {
+      fbreak;
+    }
+  };
+
+  raw_string2 => {
     int is_attr = (*(ts+2) == '$') ? 1 : 0;
     tok.type = is_attr ? QT_PARAM_RAW_STRING : QT_RAW_STRING;
     tok.pos = ts-q->raw + 2;
     tok.len = te - (ts + 3 + is_attr);
     tok.s = ts + 2 + is_attr;
     tok.numval = 0;
-    printf("raw_string: %.*s\n", (int)tok.len, tok.s);
+    printf("raw_string2: %.*s\n", (int)tok.len, tok.s);
     RSQuery_Parse_v3(pParser, RAW_STRING, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;

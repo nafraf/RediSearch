@@ -1392,15 +1392,13 @@ static IndexIterator *query_EvalSingleTagNode(QueryEvalCtx *q, TagIndex *idx, Qu
   }
 
   switch (n->type) {
-    case QN_TOKEN: {
+    case QN_TOKEN: 
+    case QN_RAW_STRING_QUERY: {
       ret = TagIndex_OpenReader(idx, q->sctx->spec, n->tn.str, n->tn.len, weight);
       break;
     }
     case QN_PREFIX:
       return Query_EvalTagPrefixNode(q, idx, n, iterout, weight, FieldSpec_HasSuffixTrie(fs));
-
-    // case QN_RAW_STRING_QUERY:
-    //   return Query_EvalTagRawStringNode(q, idx, n, iterout, weight);
 
     case QN_WILDCARD_QUERY:
       return Query_EvalTagWildcardNode(q, idx, n, iterout, weight);

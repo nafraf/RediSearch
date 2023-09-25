@@ -37,8 +37,8 @@
 %left PREFIX SUFFIX CONTAINS.
 %left PERCENT.
 %left ATTRIBUTE.
-%left VERBATIM WILDCARD.
 %left RAW_STRING.
+%left VERBATIM WILDCARD.
 
 // Thanks to these fallback directives, Any "as" appearing in the query,
 // other than in a vector_query, Will either be considered as a term,

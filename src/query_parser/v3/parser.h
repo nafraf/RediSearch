@@ -26,9 +26,9 @@
 #define CONTAINS                        26
 #define PERCENT                         27
 #define ATTRIBUTE                       28
-#define VERBATIM                        29
-#define WILDCARD                        30
-#define RAW_STRING                      31
+#define RAW_STRING                      29
+#define VERBATIM                        30
+#define WILDCARD                        31
 #define AS_T                            32
 #define SEMICOLON                       33
 #define SQUOTE                          34
