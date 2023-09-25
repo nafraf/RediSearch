@@ -477,14 +477,14 @@ IndexIterator *Query_EvalTokenNode(QueryEvalCtx *q, QueryNode *qn) {
   RSQueryTerm *term = NewQueryTerm(&qn->tn, q->tokenId++);
 
   // Get tokens using custom delimiters
-  IndexSpec *spec = q->sctx->spec;
-  sds fieldname = QueryNode_GetFieldName(sdsnew(""), (const IndexSpec *) spec,
+  const IndexSpec *spec = q->sctx->spec;
+  const sds fieldname = QueryNode_GetFieldName(sdsnew(""), (const IndexSpec *) spec,
                                           (const QueryNode*) qn, 0);
 
   if(fieldname && strlen(fieldname) > 0) {
     printf("Nafraf: fieldname:%.*s\n", (int)strlen(fieldname), fieldname);
 
-    FieldSpec *fs = IndexSpec_GetField(spec, fieldname, strlen(fieldname));
+    const FieldSpec *fs = IndexSpec_GetField(spec, fieldname, strlen(fieldname));
 
     char *p = rm_strdup(term->str);
     int i = 0;
@@ -686,7 +686,7 @@ static IndexIterator *Query_EvalRawStringQueryNode(QueryEvalCtx *q, QueryNode *q
   if(fieldname && strlen(fieldname) > 0) {
     printf("Nafraf: fieldname:%.*s\n", (int)strlen(fieldname), fieldname);
 
-    FieldSpec *fs = IndexSpec_GetField(spec, fieldname, strlen(fieldname));
+    const FieldSpec *fs = IndexSpec_GetField(spec, fieldname, strlen(fieldname));
 
     char *p = rm_strdup(term->str);
     int i = 0;
@@ -714,7 +714,7 @@ static IndexIterator *Query_EvalRawStringQueryNode(QueryEvalCtx *q, QueryNode *q
   }
 
 
-  printf("Query_EvalRawStringQueryNode - Opening reader.. `%s` FieldMask: %llx\n", term->str, EFFECTIVE_FIELDMASK(q, qn));
+  // printf("Query_EvalRawStringQueryNode - Opening reader.. `%s` FieldMask: %llx\n", term->str, EFFECTIVE_FIELDMASK(q, qn));
 
   IndexReader *ir = Redis_OpenReader(q->sctx, term, q->docTable, isSingleWord,
                                      EFFECTIVE_FIELDMASK(q, qn), q->conc, qn->opts.weight);
@@ -966,7 +966,7 @@ static IndexIterator *Query_EvalRawStringNode(QueryEvalCtx *q, QueryNode *qn) {
 
   RSQueryTerm *term = NewQueryTerm(&qn->tn, q->tokenId++);
 
-  printf("Query_EvalRawStringNode - Opening reader.. `%s` FieldMask: %llx\n", term->str, EFFECTIVE_FIELDMASK(q, qn));
+  // printf("Query_EvalRawStringNode - Opening reader.. `%s` FieldMask: %llx\n", term->str, EFFECTIVE_FIELDMASK(q, qn));
 
   IndexReader *ir = Redis_OpenReader(q->sctx, term, q->docTable, isSingleWord,
                                      EFFECTIVE_FIELDMASK(q, qn), q->conc, qn->opts.weight);
@@ -1443,6 +1443,11 @@ static IndexIterator *Query_EvalTagNode(QueryEvalCtx *q, QueryNode *qn) {
   const FieldSpec *fs = IndexSpec_GetField(q->sctx->spec, node->fieldName, strlen(node->fieldName));
   if (!fs) {
     return NULL;
+  }
+
+  if(!(fs->types & INDEXFLD_T_TAG)) {
+    QueryError_SetErrorFmt(q->status, QUERY_ESYNTAX,
+      "The field '%s' is not a TAG field, to search using tag list will not any return results", fs->name);
   }
   RedisModuleString *kstr = IndexSpec_GetFormattedKey(q->sctx->spec, fs, INDEXFLD_T_TAG);
   TagIndex *idx = TagIndex_Open(q->sctx, kstr, 0, &k);
