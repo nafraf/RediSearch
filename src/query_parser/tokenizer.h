@@ -31,6 +31,7 @@ typedef enum {
   QT_NUMERIC,
   QT_SIZE,
   QT_WILDCARD,
+  QT_RAW_STRING,
   // Parameterized types
   QT_PARAM_ANY,
   QT_PARAM_TERM,

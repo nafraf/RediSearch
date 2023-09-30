@@ -10,6 +10,7 @@
 #include <string.h>
 #include <sys/param.h>
 
+#include "toksep.h"
 #include "geo_index.h"
 #include "index.h"
 #include "query.h"
@@ -111,9 +112,11 @@ void QueryNode_Free(QueryNode *n) {
       QueryVectorNode_Free(&n->vn);
       break;
     case QN_WILDCARD_QUERY:
+    case QN_RAW_STRING_QUERY:
       QueryTokenNode_Free(&n->verb.tok);
       break;
     case QN_WILDCARD:
+    case QN_RAW_STRING:
     case QN_IDS:
       break;
     case QN_TAG:
@@ -253,6 +256,18 @@ QueryNode *NewWildcardNode_WithParams(QueryParseCtx *q, QueryToken *qt) {
     QueryNode_SetParam(q, &ret->params[0], &ret->verb.tok.str, &ret->verb.tok.len, qt);
     ret->params[0].type = PARAM_WILDCARD;
   }
+  return ret;
+}
+
+QueryNode *NewRawStringNode_WithParams(QueryParseCtx *q, QueryToken *qt) {
+  QueryNode *ret = NewQueryNode(QN_RAW_STRING_QUERY);
+  q->numTokens++;
+  assert(qt->type == QT_RAW_STRING);
+  // ensure str is NULL terminated
+  char *s = rm_malloc(qt->len + 1);
+  memcpy(s, qt->s, qt->len);
+  s[qt->len] = '\0';
+  ret->verb.tok = (RSToken){.str = s, .len = qt->len, .expanded = 0, .flags = 0};
   return ret;
 }
 
@@ -442,6 +457,7 @@ static void QueryNode_Expand(RSQueryTokenExpander expander, RSQueryExpanderCtx *
 }
 
 IndexIterator *Query_EvalTokenNode(QueryEvalCtx *q, QueryNode *qn) {
+  printf("Nafraf: Query_EvalTokenNode\n");
   if (qn->type != QN_TOKEN) {
     return NULL;
   }
@@ -453,7 +469,40 @@ IndexIterator *Query_EvalTokenNode(QueryEvalCtx *q, QueryNode *qn) {
 
   RSQueryTerm *term = NewQueryTerm(&qn->tn, q->tokenId++);
 
-  // printf("Opening reader.. `%s` FieldMask: %llx\n", term->str, EFFECTIVE_FIELDMASK(q, qn));
+  // Get tokens using custom delimiters
+  const IndexSpec *spec = q->sctx->spec;
+  const sds fieldname = QueryNode_GetFieldName(sdsnew(""), (const IndexSpec *) spec,
+                                          (const QueryNode*) qn, 0);
+
+  if(fieldname && strlen(fieldname) > 0) {
+    printf("Nafraf: fieldname:%.*s\n", (int)strlen(fieldname), fieldname);
+
+    const FieldSpec *fs = IndexSpec_GetField(spec, fieldname, strlen(fieldname));
+
+    char *p = rm_strdup(term->str);
+    int i = 0;
+    while (p) {
+      // get the next token
+      size_t toklen;
+      char *tok = NULL;
+
+      tok = toksep(&p, &toklen);
+
+
+      // this means we're at the end
+      if (tok == NULL) break;
+
+      if (toklen > 0) {
+        tok[toklen] = '\0';
+        printf("Nafraf: token[%02d]: %s\n", ++i, tok);
+      }
+
+    }
+    rm_free(p);
+  }
+
+
+  // printf("Query_EvalTokenNode - Opening reader.. `%s` FieldMask: %llx\n", term->str, EFFECTIVE_FIELDMASK(q, qn));
 
   IndexReader *ir = Redis_OpenReader(q->sctx, term, q->docTable, isSingleWord,
                                      EFFECTIVE_FIELDMASK(q, qn), q->conc, qn->opts.weight);
@@ -600,7 +649,72 @@ static IndexIterator *Query_EvalPrefixNode(QueryEvalCtx *q, QueryNode *qn) {
   }
 }
 
-/* Ealuate a prefix node by expanding all its possible matches and creating one big UNION on all
+static IndexIterator *Query_EvalRawStringQueryNode(QueryEvalCtx *q, QueryNode *qn) {
+  RS_LOG_ASSERT(qn->type == QN_RAW_STRING_QUERY, 
+    "query node type should be raw string query");
+
+  if (qn->type != QN_RAW_STRING_QUERY) {
+    return NULL;
+  }
+
+  IndexSpec *spec = q->sctx->spec;
+  Trie *t = spec->terms;
+  ContainsCtx ctx = {.q = q, .opts = &qn->opts};
+  RSToken *token = &qn->verb.tok;
+
+  // if there's only one word in the query and no special field filtering,
+  // and we are not paging beyond MAX_SCOREINDEX_SIZE
+  // we can just use the optimized score index
+  int isSingleWord = q->numTokens == 1 && q->opts->fieldmask == RS_FIELDMASK_ALL;
+
+  RSQueryTerm *term = NewQueryTerm(&qn->tn, q->tokenId++);
+
+  // Get tokens using custom delimiters
+  sds fieldname = QueryNode_GetFieldName(sdsnew(""), (const IndexSpec *) spec,
+                                          (const QueryNode*) qn, 0);
+
+  if(fieldname && strlen(fieldname) > 0) {
+    printf("Nafraf: fieldname:%.*s\n", (int)strlen(fieldname), fieldname);
+
+    const FieldSpec *fs = IndexSpec_GetField(spec, fieldname, strlen(fieldname));
+
+    char *p = rm_strdup(term->str);
+    int i = 0;
+    while (p) {
+      // get the next token
+      size_t toklen;
+      char *tok = NULL;
+
+      tok = toksep(&p, &toklen);
+
+      // this means we're at the end
+      if (tok == NULL) break;
+
+      if (toklen > 0) {
+        tok[toklen] = '\0';
+        printf("Nafraf: token[%02d]: %s\n", ++i, tok);
+      }
+
+    }
+    rm_free(p);
+  }
+
+
+  // printf("Query_EvalRawStringQueryNode - Opening reader.. `%s` FieldMask: %llx\n", term->str, EFFECTIVE_FIELDMASK(q, qn));
+
+  IndexReader *ir = Redis_OpenReader(q->sctx, term, q->docTable, isSingleWord,
+                                     EFFECTIVE_FIELDMASK(q, qn), q->conc, qn->opts.weight);
+  if (ir == NULL) {
+    Term_Free(term);
+    return NULL;
+  }
+
+  return NewReadIterator(ir);
+
+  // return NewRawStringIterator(q->docTable->maxDocId, q->docTable->size);
+}
+
+/* Evaluate a prefix node by expanding all its possible matches and creating one big UNION on all
  * of them.
  * Used for Prefix, Contains and suffix nodes.
 */
@@ -824,6 +938,32 @@ static IndexIterator *Query_EvalPhraseNode(QueryEvalCtx *q, QueryNode *qn) {
                               EFFECTIVE_FIELDMASK(q, qn), slop, inOrder, qn->opts.weight);
   }
   return ret;
+}
+
+static IndexIterator *Query_EvalRawStringNode(QueryEvalCtx *q, QueryNode *qn) {
+  if (qn->type != QN_RAW_STRING) {
+    return NULL;
+  }
+
+  // if there's only one word in the query and no special field filtering,
+  // and we are not paging beyond MAX_SCOREINDEX_SIZE
+  // we can just use the optimized score index
+  int isSingleWord = q->numTokens == 1 && q->opts->fieldmask == RS_FIELDMASK_ALL;
+
+  RSQueryTerm *term = NewQueryTerm(&qn->tn, q->tokenId++);
+
+  // printf("Query_EvalRawStringNode - Opening reader.. `%s` FieldMask: %llx\n", term->str, EFFECTIVE_FIELDMASK(q, qn));
+
+  IndexReader *ir = Redis_OpenReader(q->sctx, term, q->docTable, isSingleWord,
+                                     EFFECTIVE_FIELDMASK(q, qn), q->conc, qn->opts.weight);
+  if (ir == NULL) {
+    Term_Free(term);
+    return NULL;
+  }
+
+  return NewReadIterator(ir);
+
+  // return NewRawStringIterator(q->docTable->maxDocId, q->docTable->size);
 }
 
 static IndexIterator *Query_EvalWildcardNode(QueryEvalCtx *q, QueryNode *qn) {
@@ -1238,7 +1378,8 @@ static IndexIterator *query_EvalSingleTagNode(QueryEvalCtx *q, TagIndex *idx, Qu
   }
 
   switch (n->type) {
-    case QN_TOKEN: {
+    case QN_TOKEN: 
+    case QN_RAW_STRING_QUERY: {
       ret = TagIndex_OpenReader(idx, q->sctx->spec, n->tn.str, n->tn.len, weight);
       break;
     }
@@ -1372,6 +1513,10 @@ IndexIterator *Query_EvalNode(QueryEvalCtx *q, QueryNode *n) {
       return Query_EvalVectorNode(q, n);
     case QN_IDS:
       return Query_EvalIdFilterNode(q, &n->fn);
+    case QN_RAW_STRING:
+      return Query_EvalRawStringNode(q, n);
+    case QN_RAW_STRING_QUERY:
+      return Query_EvalRawStringQueryNode(q,n);
     case QN_WILDCARD:
       return Query_EvalWildcardNode(q, n);
     case QN_WILDCARD_QUERY:
@@ -1401,7 +1546,9 @@ int QAST_Parse(QueryAST *dst, const RedisSearchCtx *sctx, const RSSearchOptions 
                          .trace_log = NULL
 #endif
   };
-  if (dialectVersion >= 2)
+  if (dialectVersion == 5) {
+    dst->root = RSQuery_ParseRaw_v3(&qpCtx);
+  } else if (dialectVersion >= 2)
     dst->root = RSQuery_ParseRaw_v2(&qpCtx);
   else
     dst->root = RSQuery_ParseRaw_v1(&qpCtx);
@@ -1512,6 +1659,8 @@ int QueryNode_EvalParams(dict *params, QueryNode *n, QueryError *status) {
     case QN_FUZZY:
     case QN_OPTIONAL:
     case QN_IDS:
+    case QN_RAW_STRING:
+    case QN_RAW_STRING_QUERY:
     case QN_WILDCARD:
     case QN_WILDCARD_QUERY:
     case QN_GEOMETRY:
@@ -1566,6 +1715,8 @@ int QueryNode_CheckIsValid(QueryNode *n, IndexSpec *spec, RSSearchOptions *opts,
     case QN_GEO:
     case QN_PREFIX:
     case QN_IDS:
+    case QN_RAW_STRING:
+    case QN_RAW_STRING_QUERY:
     case QN_WILDCARD:
     case QN_WILDCARD_QUERY:
     case QN_TAG:
@@ -1602,7 +1753,8 @@ void QueryNode_AddChildren(QueryNode *n, QueryNode **children, size_t nchildren)
       QueryNode *child = children[ii];
       if (child->type == QN_TOKEN || child->type == QN_PHRASE ||
           child->type == QN_PREFIX || child->type == QN_LEXRANGE ||
-          child->type == QN_WILDCARD_QUERY) {
+          child->type == QN_WILDCARD_QUERY ||
+          child->type == QN_RAW_STRING_QUERY) {
         n->children = array_ensure_append(n->children, children + ii, 1, QueryNode *);
         for(size_t jj = 0; jj < QueryNode_NumParams(child); ++jj) {
           Param *p = child->params + jj;
@@ -1659,6 +1811,33 @@ static sds doPad(sds s, int len) {
 static sds QueryNode_DumpSds(sds s, const IndexSpec *spec, const QueryNode *qs, int depth);
 
 static sds QueryNode_DumpChildren(sds s, const IndexSpec *spec, const QueryNode *qs, int depth);
+
+static sds QueryNode_GetFieldName(sds s, const IndexSpec *spec, const QueryNode *qs, int depth) {
+  if (qs->opts.fieldMask == 0) {
+    return NULL;
+  }
+
+  if (qs->opts.fieldMask && qs->opts.fieldMask != RS_FIELDMASK_ALL && qs->type != QN_NUMERIC &&
+      qs->type != QN_GEO && qs->type != QN_IDS) {
+    if (!spec) {
+      s = sdscatprintf(s, "%" PRIu64, (uint64_t)qs->opts.fieldMask);
+    } else {
+      t_fieldMask fm = qs->opts.fieldMask;
+      int i = 0, n = 0;
+      while (fm) {
+        t_fieldMask bit = (fm & 1) << i;
+        if (bit) {
+          const char *f = IndexSpec_GetFieldNameByBit(spec, bit);
+          s = sdscatprintf(s, "%s%s", n ? "|" : "", f ? f : "n/a");
+          n++;
+        }
+        fm = fm >> 1;
+        i++;
+      }
+    }
+  }
+  return s;
+}
 
 static sds QueryNode_DumpSds(sds s, const IndexSpec *spec, const QueryNode *qs, int depth) {
   s = doPad(s, depth);
@@ -1802,12 +1981,18 @@ static sds QueryNode_DumpSds(sds s, const IndexSpec *spec, const QueryNode *qs, 
     case QN_WILDCARD:
       s = sdscat(s, "<WILDCARD>");
       break;
+    case QN_RAW_STRING:
+      s = sdscat(s, "<RAW_STRING>");
+      break;
     case QN_FUZZY:
       s = sdscatprintf(s, "FUZZY{%s}\n", qs->fz.tok.str);
       return s;
     case QN_WILDCARD_QUERY:
       s = sdscatprintf(s, "WILDCARD{%s}\n", qs->verb.tok.str);
-      break;
+      return s;
+    case QN_RAW_STRING_QUERY:
+      s = sdscatprintf(s, "RAW_STRING{%s}\n", qs->verb.tok.str);
+      return s;
     case QN_NULL:
       s = sdscat(s, "<empty>");
       break;

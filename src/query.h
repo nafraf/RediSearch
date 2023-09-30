@@ -143,6 +143,10 @@ void QAST_Destroy(QueryAST *q);
 
 QueryNode *RSQuery_ParseRaw_v1(QueryParseCtx *);
 QueryNode *RSQuery_ParseRaw_v2(QueryParseCtx *);
+QueryNode *RSQuery_ParseRaw_v3(QueryParseCtx *);
+
+static sds QueryNode_GetFieldName(sds s, const IndexSpec *spec,
+                                  const QueryNode *qs, int depth);
 
 #ifdef __cplusplus
 }
