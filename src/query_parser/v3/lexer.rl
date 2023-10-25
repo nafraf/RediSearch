@@ -1,6 +1,6 @@
 /*
  * Copyright Redis Ltd. 2016 - present
- * Licensed under your choice of the Redis Source Available License 2.0 (RSALv3) or
+ * Licensed under your choice of the Redis Source Available License 2.0 (RSALv2) or
  * the Server Side Public License v1 (SSPLv1).
  */
 
@@ -24,7 +24,6 @@
 void RSQuery_Parse_v3(void *yyp, int yymajor, QueryToken yyminor, QueryParseCtx *ctx);
 void *RSQuery_ParseAlloc_v3(void *(*mallocProc)(size_t));
 void RSQuery_ParseFree_v3(void *p, void (*freeProc)(void *));
-
 
 %%{
 
@@ -51,13 +50,10 @@ rsqb = ']';
 lsqb = '[';
 escape = '\\';
 squote = "'";
-and = ",";
 escaped_character = escape (punct | space | escape);
 escaped_term = (((any - (punct | cntrl | space | escape)) | escaped_character) | '_')+  $0;
-verbatim_term = squote . ((any - squote - escape) | escape.any)+ . squote;
-verbatim_txt_term = lp . space . rp $0;
-verbatim_tag_list = lb . verbatim_term ( ( and | or) . verbatim_term)* . rb;
-term = (escaped_term | verbatim_txt_term);
+unescaped_tag = lb . (((any - ( escape | rb ) ) | escape.escape | escape.rb) | '_' )+ . rb $0;
+term = (unescaped_tag | escaped_term);
 fieldname = escaped_term $ 1;
 mod = '@'.escaped_term $ 1;
 attr = '$'.term $ 1;
@@ -65,10 +61,8 @@ contains = (star.term.star | star.number.star | star.attr.star) $1;
 prefix = (term.star | number.star | attr.star) $1;
 suffix = (star.term | star.number | star.attr) $1;
 as = 'AS'|'aS'|'As'|'as';
-
-raw_string = verbatim_term $4;
-wildcard = 'w' . verbatim_term $4;
-
+verbatim = squote . ((any - squote - escape) | escape.any)+ . squote $4;
+wildcard = 'w' . verbatim $4;
 
 main := |*
 
@@ -201,15 +195,6 @@ main := |*
     }
   };
 
-  squote => { 
-    tok.pos = ts-q->raw;
-    printf("squote: %.*s\n", (int)(te-ts), ts);
-    RSQuery_Parse_v3(pParser, SQUOTE, tok, q);
-    if (!QPCTX_ISOK(q)) {
-      fbreak;
-    }
-  };
-
   minus =>  { 
     tok.pos = ts-q->raw;
     RSQuery_Parse_v3(pParser, MINUS, tok, q);  
@@ -256,26 +241,25 @@ main := |*
   punct;
   cntrl;
 
-  verbatim_txt_term => {
-    tok.len = te - ( ts + 2);
-    tok.s = ts + 1;
-    tok.numval = 0;
-    tok.pos = ts-q->raw;
-    printf("verbatim_txt_term: %.*s\n", (int)tok.len, tok.s);
-    RSQuery_Parse_v3(pParser, VERBATIM, tok, q);
-    if (!QPCTX_ISOK(q)) {
-      printf("Nafraf: Syntax Error\n");
-      fbreak;
-    }
-  };
-
-  term => {
+  escaped_term => {
     tok.len = te-ts;
     tok.s = ts;
     tok.numval = 0;
     tok.pos = ts-q->raw;
     printf("term: %.*s\n", (int)tok.len, tok.s);
     RSQuery_Parse_v3(pParser, TERM, tok, q);
+    if (!QPCTX_ISOK(q)) {
+      fbreak;
+    }
+  };
+
+  unescaped_tag => {
+    tok.len = te-(ts + 2);
+    tok.s = ts + 1;
+    tok.numval = 0;
+    tok.pos = ts-q->raw;
+    printf("unescaped_tag: %.*s\n", (int)tok.len, tok.s);
+    RSQuery_Parse_v3(pParser, UNESCAPED_TAG, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
     }
@@ -300,6 +284,7 @@ main := |*
     tok.s = ts + is_attr;
     tok.numval = 0;
     tok.pos = ts-q->raw;
+    printf("prefix: %.*s\n", (int)tok.len, tok.s);
 
     RSQuery_Parse_v3(pParser, PREFIX, tok, q);
     
@@ -315,6 +300,7 @@ main := |*
     tok.s = ts + 1 + is_attr;
     tok.numval = 0;
     tok.pos = ts-q->raw;
+    printf("suffix: %.*s\n", (int)tok.len, tok.s);
 
     RSQuery_Parse_v3(pParser, SUFFIX, tok, q);
     
@@ -330,9 +316,24 @@ main := |*
     tok.s = ts + 1 + is_attr;
     tok.numval = 0;
     tok.pos = ts-q->raw;
+    printf("contains: %.*s\n", (int)tok.len, tok.s);
 
     RSQuery_Parse_v3(pParser, CONTAINS, tok, q);
     
+    if (!QPCTX_ISOK(q)) {
+      fbreak;
+    }
+  };
+
+  verbatim => {
+    int is_attr = (*(ts+2) == '$') ? 1 : 0;
+    tok.type = is_attr ? QT_PARAM_TERM : QT_TERM;
+    tok.pos = ts-q->raw;
+    tok.len = te - (ts + 2 + is_attr);
+    tok.s = ts + 1 + is_attr;
+    tok.numval = 0;
+    printf("verbatim: %.*s\n", (int)tok.len, tok.s);
+    RSQuery_Parse_v3(pParser, VERBATIM, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
     }
@@ -345,21 +346,7 @@ main := |*
     tok.len = te - (ts + 3 + is_attr);
     tok.s = ts + 2 + is_attr;
     tok.numval = 0;
-    printf("wildcard: %.*s\n", (int)tok.len, tok.s);
     RSQuery_Parse_v3(pParser, WILDCARD, tok, q);
-    if (!QPCTX_ISOK(q)) {
-      fbreak;
-    }
-  };
-
-  raw_string => {
-    tok.type = QT_RAW_STRING;
-    tok.pos = ts-q->raw + 1;
-    tok.len = te - (ts + 2);
-    tok.s = ts + 1;
-    tok.numval = 0;
-    printf("raw_string: %.*s\n", (int)tok.len, tok.s);
-    RSQuery_Parse_v3(pParser, RAW_STRING, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
     }

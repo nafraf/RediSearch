@@ -89,6 +89,7 @@ main := |*
     tok.pos = ts-q->raw;
     tok.len = te - (ts + 1);
     tok.s = ts+1;
+    printf("mod: %.*s\n", (int)tok.len, tok.s);
     RSQuery_Parse_v2(pParser, MODIFIER, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
@@ -98,6 +99,7 @@ main := |*
     tok.pos = ts-q->raw;
     tok.len = te - (ts + 1);
     tok.s = ts+1;
+    printf("attr: %.*s\n", (int)tok.len, tok.s);
     RSQuery_Parse_v2(pParser, ATTRIBUTE, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
@@ -175,20 +177,20 @@ main := |*
       fbreak;
     }
   };
-   colon => { 
-     tok.pos = ts-q->raw;
-     RSQuery_Parse_v2(pParser, COLON, tok, q);
+  colon => { 
+    tok.pos = ts-q->raw;
+    RSQuery_Parse_v2(pParser, COLON, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
     }
-   };
-    semicolon => { 
-     tok.pos = ts-q->raw;
-     RSQuery_Parse_v2(pParser, SEMICOLON, tok, q);
+  };
+  semicolon => { 
+    tok.pos = ts-q->raw;
+    RSQuery_Parse_v2(pParser, SEMICOLON, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
     }
-   };
+  };
 
   minus =>  { 
     tok.pos = ts-q->raw;
@@ -241,11 +243,13 @@ main := |*
     tok.s = ts;
     tok.numval = 0;
     tok.pos = ts-q->raw;
+    printf("term: %.*s\n", (int)tok.len, tok.s);
     RSQuery_Parse_v2(pParser, TERM, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
     }
   };
+
   prefix => {
     int is_attr = (*ts == '$') ? 1 : 0;
     tok.type = is_attr ? QT_PARAM_TERM : QT_TERM;
@@ -253,6 +257,7 @@ main := |*
     tok.s = ts + is_attr;
     tok.numval = 0;
     tok.pos = ts-q->raw;
+    printf("prefix: %.*s\n", (int)tok.len, tok.s);
 
     RSQuery_Parse_v2(pParser, PREFIX, tok, q);
     
@@ -260,6 +265,7 @@ main := |*
       fbreak;
     }
   };
+
   suffix => {
     int is_attr = (*(ts+1) == '$') ? 1 : 0;
     tok.type = is_attr ? QT_PARAM_TERM : QT_TERM;
@@ -267,6 +273,7 @@ main := |*
     tok.s = ts + 1 + is_attr;
     tok.numval = 0;
     tok.pos = ts-q->raw;
+    printf("suffix: %.*s\n", (int)tok.len, tok.s);
 
     RSQuery_Parse_v2(pParser, SUFFIX, tok, q);
     
@@ -274,6 +281,7 @@ main := |*
       fbreak;
     }
   };
+
   contains => {
     int is_attr = (*(ts+1) == '$') ? 1 : 0;
     tok.type = is_attr ? QT_PARAM_TERM : QT_TERM;
@@ -281,6 +289,7 @@ main := |*
     tok.s = ts + 1 + is_attr;
     tok.numval = 0;
     tok.pos = ts-q->raw;
+    printf("contains: %.*s\n", (int)tok.len, tok.s);
 
     RSQuery_Parse_v2(pParser, CONTAINS, tok, q);
     
@@ -296,6 +305,7 @@ main := |*
     tok.len = te - (ts + 2 + is_attr);
     tok.s = ts + 1 + is_attr;
     tok.numval = 0;
+    printf("verbatim: %.*s\n", (int)tok.len, tok.s);
     RSQuery_Parse_v2(pParser, VERBATIM, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;

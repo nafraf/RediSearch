@@ -1897,6 +1897,7 @@ yylhsminor.yy119 = yymsp[0].minor.yy119;
       // Tag field names must be case sensitive, we can't do rm_strdupcase
         char *s = rm_strndup(yymsp[-4].minor.yy0.s, yymsp[-4].minor.yy0.len);
         size_t slen = unescapen((char*)s, yymsp[-4].minor.yy0.len);
+        printf("Nafraf: ParserV2 Case 0 - NewTagNode: %s\n", s);
 
         yylhsminor.yy119 = NewTagNode(s, slen);
         QueryNode_AddChildren(yylhsminor.yy119, yymsp[-1].minor.yy119->children, QueryNode_NumChildren(yymsp[-1].minor.yy119));
@@ -1910,15 +1911,31 @@ yylhsminor.yy119 = yymsp[0].minor.yy119;
         break;
       case 50: /* tag_list ::= param_term_case */
 {
+  printf("Nafraf: ParserV2 param_term_case(yymsp[0].minor.yy0) . [TAGLIST] - NewPhraseNode\n");
   yylhsminor.yy119 = NewPhraseNode(0);
   QueryNode_AddChild(yylhsminor.yy119, NewTokenNode_WithParams(ctx, &yymsp[0].minor.yy0));
 }
   yymsp[0].minor.yy119 = yylhsminor.yy119;
         break;
       case 51: /* tag_list ::= affix */
-      case 52: /* tag_list ::= verbatim */ yytestcase(yyruleno==52);
-      case 53: /* tag_list ::= termlist */ yytestcase(yyruleno==53);
 {
+    printf("Nafraf: ParserV2 affix(yymsp[0].minor.yy119) . [TAGLIST] - NewPhraseNode\n");
+    yylhsminor.yy119 = NewPhraseNode(0);
+    QueryNode_AddChild(yylhsminor.yy119, yymsp[0].minor.yy119);
+}
+  yymsp[0].minor.yy119 = yylhsminor.yy119;
+        break;
+      case 52: /* tag_list ::= verbatim */
+{
+    printf("Nafraf: ParserV2 verbatim(yymsp[0].minor.yy119) . [TAGLIST] - NewPhraseNode\n");
+    yylhsminor.yy119 = NewPhraseNode(0);
+    QueryNode_AddChild(yylhsminor.yy119, yymsp[0].minor.yy119);
+}
+  yymsp[0].minor.yy119 = yylhsminor.yy119;
+        break;
+      case 53: /* tag_list ::= termlist */
+{
+    printf("Nafraf: ParserV2 termlist(yymsp[0].minor.yy119) . [TAGLIST] - NewPhraseNode\n");
     yylhsminor.yy119 = NewPhraseNode(0);
     QueryNode_AddChild(yylhsminor.yy119, yymsp[0].minor.yy119);
 }
@@ -2212,6 +2229,7 @@ yylhsminor.yy119 = yymsp[0].minor.yy119;
         break;
       case 88: /* param_term ::= term */
 {
+  printf("Nafraf: ParserV2 term(yymsp[0].minor.yy0). QT_TERM\n");
   yylhsminor.yy0 = yymsp[0].minor.yy0;
   yylhsminor.yy0.type = QT_TERM;
 }
@@ -2226,6 +2244,7 @@ yylhsminor.yy119 = yymsp[0].minor.yy119;
         break;
       case 90: /* param_term_case ::= term */
 {
+  printf("Nafraf: ParserV2 term(yymsp[0].minor.yy0). QT_TERM_CASE\n");
   yylhsminor.yy0 = yymsp[0].minor.yy0;
   yylhsminor.yy0.type = QT_TERM_CASE;
 }

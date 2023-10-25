@@ -19,6 +19,7 @@
 %left RP RB RSQB.
 
 %left TERM.
+%left UNESCAPED_TAG.
 %left QUOTE.
 %left LP LB LSQB.
 
@@ -37,7 +38,6 @@
 %left PREFIX SUFFIX CONTAINS.
 %left PERCENT.
 %left ATTRIBUTE.
-%left RAW_STRING.
 %left VERBATIM WILDCARD.
 
 // Thanks to these fallback directives, Any "as" appearing in the query,
@@ -681,10 +681,6 @@ verbatim(A) ::= WILDCARD(B) . {
     A = NewWildcardNode_WithParams(ctx, &B);
 }
 
-verbatim(A) ::= RAW_STRING(B) . {
-    A = NewRawStringNode_WithParams(ctx, &B);
-}
-
 /////////////////////////////////////////////////////////////////
 // Fuzzy terms
 /////////////////////////////////////////////////////////////////
@@ -745,6 +741,17 @@ expr(A) ::= modifier(B) COLON LB tag_list(C) RB . {
         QueryNode_ClearChildren(C, 0);
         QueryNode_Free(C);
     }
+}
+
+// FT.SEARCH idx "@a_tag:{joe@mail.com}"
+expr(A) ::= modifier(B) COLON UNESCAPED_TAG(C) . {
+  // Tag field names must be case sensitive, we can't do rm_strdupcase
+  char *s = rm_strndup(B.s, B.len);
+  size_t slen = unescapen((char*)s, B.len);
+  printf("Nafraf: ParserV3 Case 0 - NewTagNode: %s\n", s);
+
+  A = NewTagNode(s, slen);
+  QueryNode_AddChild(A, NewTokenNode_WithParams(ctx, &C));
 }
 
 // This supports:
@@ -810,24 +817,26 @@ expr(A) ::= modifier(B) COLON LB SEMICOLON tag_list(C) SEMICOLON RB . {
 //     }
 // }
 
+// tag_list(A) ::= param_term(B) . [TAGLIST] {
+//   printf("Nafraf: ParserV3 param_term(B) . [TAGLIST] - NewPhraseNode\n");
+//   A = NewPhraseNode(0);
+//   QueryNode_AddChild(A, NewTokenNode_WithParams(ctx, &B));
+// }
+
 tag_list(A) ::= param_term_case(B) . [TAGLIST] {
+  printf("Nafraf: ParserV3 param_term_case(B) . [TAGLIST] - NewPhraseNode\n");
   A = NewPhraseNode(0);
   QueryNode_AddChild(A, NewTokenNode_WithParams(ctx, &B));
 }
 
 tag_list(A) ::= affix(B) . [TAGLIST] {
+    printf("Nafraf: ParserV3 affix(B) . [TAGLIST] - NewPhraseNode\n");
     A = NewPhraseNode(0);
     QueryNode_AddChild(A, B);
 }
 
 tag_list(A) ::= verbatim(B) . [TAGLIST] {
     printf("Nafraf: ParserV3 verbatim(B) . [TAGLIST] - NewPhraseNode\n");
-    A = NewPhraseNode(0);
-    QueryNode_AddChild(A, B);
-}
-
-tag_list(A) ::= SQUOTE verbatim(B) SQUOTE . [TAGLIST] {
-    printf("Nafraf: ParserV3 SQUOTE verbatim(B) SQUOTE . [TAGLIST] - NewPhraseNode\n");
     A = NewPhraseNode(0);
     QueryNode_AddChild(A, B);
 }
@@ -1153,6 +1162,7 @@ term(A) ::= SIZE(B). {
 
 // Number is treated as a term here
 param_term(A) ::= term(B). {
+  printf("Nafraf: ParserV3 term(B). QT_TERM\n");
   A = B;
   A.type = QT_TERM;
 }
@@ -1163,6 +1173,7 @@ param_term(A) ::= ATTRIBUTE(B). {
 }
 
 param_term_case(A) ::= term(B). {
+  printf("Nafraf: ParserV3 term(B). QT_TERM_CASE\n");
   A = B;
   A.type = QT_TERM_CASE;
 }

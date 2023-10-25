@@ -726,6 +726,7 @@ expr(A) ::= modifier(B) COLON LB tag_list(C) RB . {
       // Tag field names must be case sensitive, we can't do rm_strdupcase
         char *s = rm_strndup(B.s, B.len);
         size_t slen = unescapen((char*)s, B.len);
+        printf("Nafraf: ParserV2 Case 0 - NewTagNode: %s\n", s);
 
         A = NewTagNode(s, slen);
         QueryNode_AddChildren(A, C->children, QueryNode_NumChildren(C));
@@ -737,21 +738,25 @@ expr(A) ::= modifier(B) COLON LB tag_list(C) RB . {
 }
 
 tag_list(A) ::= param_term_case(B) . [TAGLIST] {
+  printf("Nafraf: ParserV2 param_term_case(B) . [TAGLIST] - NewPhraseNode\n");
   A = NewPhraseNode(0);
   QueryNode_AddChild(A, NewTokenNode_WithParams(ctx, &B));
 }
 
 tag_list(A) ::= affix(B) . [TAGLIST] {
+    printf("Nafraf: ParserV2 affix(B) . [TAGLIST] - NewPhraseNode\n");
     A = NewPhraseNode(0);
     QueryNode_AddChild(A, B);
 }
 
 tag_list(A) ::= verbatim(B) . [TAGLIST] {
+    printf("Nafraf: ParserV2 verbatim(B) . [TAGLIST] - NewPhraseNode\n");
     A = NewPhraseNode(0);
     QueryNode_AddChild(A, B);
 }
 
 tag_list(A) ::= termlist(B) . [TAGLIST] {
+    printf("Nafraf: ParserV2 termlist(B) . [TAGLIST] - NewPhraseNode\n");
     A = NewPhraseNode(0);
     QueryNode_AddChild(A, B);
 }
@@ -1071,6 +1076,7 @@ term(A) ::= SIZE(B). {
 
 // Number is treated as a term here
 param_term(A) ::= term(B). {
+  printf("Nafraf: ParserV2 term(B). QT_TERM\n");
   A = B;
   A.type = QT_TERM;
 }
@@ -1081,6 +1087,7 @@ param_term(A) ::= ATTRIBUTE(B). {
 }
 
 param_term_case(A) ::= term(B). {
+  printf("Nafraf: ParserV2 term(B). QT_TERM_CASE\n");
   A = B;
   A.type = QT_TERM_CASE;
 }
