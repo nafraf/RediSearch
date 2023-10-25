@@ -352,7 +352,6 @@ ifeq ($(FORCE),1)
 	rm -f lexer.c parser-toplevel.c parser.c.inc
 	$(SHOW)cd src/query_parser/v2 ;\
 	rm -f lexer.c parser-toplevel.c parser.c.inc
-	$(SHOW)cd src/query_parser/v3 ;\
 	$(SHOW)$(MAKE) -C src/query_parser/v3 clean
 endif
 	$(SHOW)$(MAKE) -C src/aggregate/expr
