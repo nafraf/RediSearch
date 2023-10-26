@@ -369,16 +369,16 @@ def testEmptyTagLeak(env):
 def testTagAutoescaping(env):
 
     # Create sample data
-    env.cmd('HSET', 'tag:1', 'tag', 'abc:1')
-    env.cmd('HSET', 'tag:2', 'tag', 'xyz:2')
-    env.cmd('HSET', 'tag:3', 'tag', 'xyz:2,abc:1') # add two tags
-    env.cmd('HSET', 'tag:4', 'tag', 'abc:1-xyz:2')
-    env.cmd('HSET', 'tag:5', 'tag', 'joe@mail.com')
-    env.cmd('HSET', 'tag:6', 'tag', 'tag with {brackets}')
-    env.cmd('HSET', 'tag:7', 'tag', 'abc:1|xyz:2')
+    env.cmd('HSET', 'tag:1', 'tag', 'abc:1', 'id', '1')
+    env.cmd('HSET', 'tag:2', 'tag', 'xyz:2', 'id', '2')
+    env.cmd('HSET', 'tag:3', 'tag', 'xyz:2,abc:1', 'id', '3') # add two tags
+    env.cmd('HSET', 'tag:4', 'tag', 'abc:1-xyz:2', 'id', '4')
+    env.cmd('HSET', 'tag:5', 'tag', 'joe@mail.com', 'id', '5')
+    env.cmd('HSET', 'tag:6', 'tag', 'tag with {brackets}', 'id', '6')
+    env.cmd('HSET', 'tag:7', 'tag', 'abc:1|xyz:2', 'id', '7')
     
     # Create index
-    env.expect('FT.CREATE idx ON HASH PREFIX 1 tag: SCHEMA tag TAG SORTABLE').ok()
+    env.expect('FT.CREATE idx ON HASH PREFIX 1 tag: SCHEMA tag TAG SORTABLE id NUMERIC SORTABLE').ok()
     waitForIndex(env, 'idx')
 
     # Set default dialect to 5 because it supports the autoescaping
@@ -386,7 +386,7 @@ def testTagAutoescaping(env):
 
     # Test exact match    
     res = env.cmd('FT.SEARCH', 'idx', '@tag:{abc:1}', 'NOCONTENT',
-                  'SORTBY', 'tag', 'ASC')
+                  'SORTBY', 'id', 'ASC')
     expected_result = [2, 'tag:1', 'tag:3']
     env.assertEqual(expected_result, res)
 
@@ -406,13 +406,13 @@ def testTagAutoescaping(env):
 
     # OR Operator (UNION queries)
     res = env.cmd('FT.SEARCH', 'idx', '@tag:{abc:1-xyz:2} | @tag:{joe@mail.com}',
-                  'NOCONTENT', 'SORTBY', 'tag', 'ASC')
+                  'NOCONTENT', 'SORTBY', 'id', 'ASC')
     expected_result = [2, 'tag:4', 'tag:5']
     env.assertEqual(expected_result, res)
 
     # Optional Queries (using tiled "~")
     res = env.cmd('FT.SEARCH', 'idx', '@tag:{abc:1} ~@tag:{xyz:2}',
-                  'NOCONTENT', 'SORTBY', 'tag', 'ASC')
+                  'NOCONTENT', 'SORTBY', 'id', 'ASC')
     expected_result = [2, 'tag:1', 'tag:3']
     env.assertEqual(expected_result, res)
 
