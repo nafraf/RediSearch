@@ -67,7 +67,6 @@ void QueryParam_Free(QueryParam *p) {
 bool QueryParam_SetParam(QueryParseCtx *q, Param *target_param, void *target_value,
                          size_t *target_len, QueryToken *source) {
 
-  printf("Nafraf: QueryParam_SetParam\n");
   ParamType type = PARAM_NONE;
   switch (source->type) {
 

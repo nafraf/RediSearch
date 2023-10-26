@@ -1893,7 +1893,6 @@ PRINT_PROFILE_FUNC(printUnionIt) {
   case QN_NUMERIC : unionTypeStr = "NUMERIC"; break;
   case QN_LEXRANGE : unionTypeStr = "LEXRANGE"; break;
   case QN_WILDCARD_QUERY : unionTypeStr = "WILDCARD"; break;
-  case QN_RAW_STRING_QUERY : unionTypeStr = "RAW_STRING"; break;
   default:
     RS_LOG_ASSERT(0, "Invalid type for union");
     break;
