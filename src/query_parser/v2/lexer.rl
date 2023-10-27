@@ -165,6 +165,7 @@ main := |*
   };
   lb => { 
     tok.pos = ts-q->raw;
+    printf("lb: %.*s\n", (int)tok.len, tok.s);
     RSQuery_Parse_v2(pParser, LB, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
@@ -172,6 +173,7 @@ main := |*
   };
   rb => { 
     tok.pos = ts-q->raw;
+    printf("rb: %.*s\n", (int)tok.len, tok.s);
     RSQuery_Parse_v2(pParser, RB, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;

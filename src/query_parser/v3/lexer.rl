@@ -166,15 +166,19 @@ main := |*
       fbreak;
     }
   };
+  
   lb => { 
     tok.pos = ts-q->raw;
+    printf("lb: %.*s\n", (int)tok.len, tok.s);
     RSQuery_Parse_v3(pParser, LB, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
     }
   };
+
   rb => { 
     tok.pos = ts-q->raw;
+    printf("rb: %.*s\n", (int)tok.len, tok.s);
     RSQuery_Parse_v3(pParser, RB, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
