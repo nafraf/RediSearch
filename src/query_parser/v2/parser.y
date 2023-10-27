@@ -19,6 +19,7 @@
 %left RP RB RSQB.
 
 %left TERM.
+%left UNESCAPED_TAG.
 %left QUOTE.
 %left LP LB LSQB.
 
@@ -672,6 +673,7 @@ affix(A) ::= CONTAINS(B) . {
 // }
 
 verbatim(A) ::= WILDCARD(B) . {
+  printf("Nafraf: ParserV3 verbatim(A) ::= WILDCARD(B) . \n");
     A = NewWildcardNode_WithParams(ctx, &B);
 }
 
@@ -719,61 +721,15 @@ modifierlist(A) ::= modifierlist(B) OR term(C). {
 // Tag Lists - curly braces separated lists of words
 /////////////////////////////////////////////////////////////////
 
-expr(A) ::= modifier(B) COLON LB tag_list(C) RB . {
-    if (!C) {
-        A = NULL;
-    } else {
-      // Tag field names must be case sensitive, we can't do rm_strdupcase
-        char *s = rm_strndup(B.s, B.len);
-        size_t slen = unescapen((char*)s, B.len);
+// FT.SEARCH idx "@a_tag:{joe@mail.com}"
+// brackets are part of UNESCAPED_TAG
+expr(A) ::= modifier(B) COLON UNESCAPED_TAG(C) . {
+  // Tag field names must be case sensitive, we can't do rm_strdupcase
+  char *s = rm_strndup(B.s, B.len);
+  size_t slen = unescapen((char*)s, B.len);
 
-        A = NewTagNode(s, slen);
-        QueryNode_AddChildren(A, C->children, QueryNode_NumChildren(C));
-
-        // Set the children count on C to 0 so they won't get recursively free'd
-        QueryNode_ClearChildren(C, 0);
-        QueryNode_Free(C);
-    }
-}
-
-tag_list(A) ::= param_term_case(B) . [TAGLIST] {
-  A = NewPhraseNode(0);
-  QueryNode_AddChild(A, NewTokenNode_WithParams(ctx, &B));
-}
-
-tag_list(A) ::= affix(B) . [TAGLIST] {
-    A = NewPhraseNode(0);
-    QueryNode_AddChild(A, B);
-}
-
-tag_list(A) ::= verbatim(B) . [TAGLIST] {
-    A = NewPhraseNode(0);
-    QueryNode_AddChild(A, B);
-}
-
-tag_list(A) ::= termlist(B) . [TAGLIST] {
-    A = NewPhraseNode(0);
-    QueryNode_AddChild(A, B);
-}
-
-tag_list(A) ::= tag_list(B) OR param_term_case(C) . [TAGLIST] {
-  QueryNode_AddChild(B, NewTokenNode_WithParams(ctx, &C));
-  A = B;
-}
-
-tag_list(A) ::= tag_list(B) OR affix(C) . [TAGLIST] {
-    QueryNode_AddChild(B, C);
-    A = B;
-}
-
-tag_list(A) ::= tag_list(B) OR verbatim(C) . [TAGLIST] {
-    QueryNode_AddChild(B, C);
-    A = B;
-}
-
-tag_list(A) ::= tag_list(B) OR termlist(C) . [TAGLIST] {
-    QueryNode_AddChild(B, C);
-    A = B;
+  A = NewTagNode(s, slen);
+  QueryNode_AddChild(A, NewTokenNode_WithParams(ctx, &C));
 }
 
 /////////////////////////////////////////////////////////////////
