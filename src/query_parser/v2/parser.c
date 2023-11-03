@@ -1845,6 +1845,7 @@ yylhsminor.yy119 = yymsp[0].minor.yy119;
         break;
       case 42: /* verbatim ::= WILDCARD */
 {
+  printf("Nafraf: ParserV2 verbatim(yylhsminor.yy119) ::= WILDCARD(yymsp[0].minor.yy0) . \n");
     yylhsminor.yy119 = NewWildcardNode_WithParams(ctx, &yymsp[0].minor.yy0);
 }
   yymsp[0].minor.yy119 = yylhsminor.yy119;
@@ -2203,15 +2204,29 @@ yylhsminor.yy119 = yymsp[0].minor.yy119;
 }
         break;
       case 85: /* term ::= TERM */
-      case 86: /* term ::= NUMBER */ yytestcase(yyruleno==86);
-      case 87: /* term ::= SIZE */ yytestcase(yyruleno==87);
 {
+  printf("Nafraf: ParserV2 term(yylhsminor.yy0) ::= TERM(%s) .\n", yymsp[0].minor.yy0.s);
+  yylhsminor.yy0 = yymsp[0].minor.yy0;
+}
+  yymsp[0].minor.yy0 = yylhsminor.yy0;
+        break;
+      case 86: /* term ::= NUMBER */
+{
+  printf("Nafraf: ParserV2 term(yylhsminor.yy0) ::= NUMBER(yymsp[0].minor.yy0) .\n");
+  yylhsminor.yy0 = yymsp[0].minor.yy0;
+}
+  yymsp[0].minor.yy0 = yylhsminor.yy0;
+        break;
+      case 87: /* term ::= SIZE */
+{
+  printf("Nafraf: ParserV2 term(yylhsminor.yy0) ::= SIZE(yymsp[0].minor.yy0).\n");
   yylhsminor.yy0 = yymsp[0].minor.yy0;
 }
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 88: /* param_term ::= term */
 {
+  printf("Nafraf: ParserV2 param_term(yylhsminor.yy0) :: term(%s)\n", yymsp[0].minor.yy0.s);
   yylhsminor.yy0 = yymsp[0].minor.yy0;
   yylhsminor.yy0.type = QT_TERM;
 }
@@ -2219,6 +2234,7 @@ yylhsminor.yy119 = yymsp[0].minor.yy119;
         break;
       case 89: /* param_term ::= ATTRIBUTE */
 {
+  printf("Nafraf: ParserV2 param_term(yylhsminor.yy0) :: ATTRIBUTE(yymsp[0].minor.yy0)\n");
   yylhsminor.yy0 = yymsp[0].minor.yy0;
   yylhsminor.yy0.type = QT_PARAM_TERM;
 }
@@ -2226,6 +2242,7 @@ yylhsminor.yy119 = yymsp[0].minor.yy119;
         break;
       case 90: /* param_term_case ::= term */
 {
+  printf("Nafraf: ParserV2 param_term_case(yylhsminor.yy0) :: term(yymsp[0].minor.yy0)\n");
   yylhsminor.yy0 = yymsp[0].minor.yy0;
   yylhsminor.yy0.type = QT_TERM_CASE;
 }
@@ -2233,6 +2250,7 @@ yylhsminor.yy119 = yymsp[0].minor.yy119;
         break;
       case 91: /* param_term_case ::= ATTRIBUTE */
 {
+  printf("Nafraf: ParserV2 param_term_case(yylhsminor.yy0) :: ATTRIBUTE(yymsp[0].minor.yy0)\n");
   yylhsminor.yy0 = yymsp[0].minor.yy0;
   yylhsminor.yy0.type = QT_PARAM_TERM_CASE;
 }
@@ -2240,6 +2258,7 @@ yylhsminor.yy119 = yymsp[0].minor.yy119;
         break;
       case 92: /* param_size ::= SIZE */
 {
+  printf("Nafraf: ParserV2 param_size(yylhsminor.yy0) :: SIZE(yymsp[0].minor.yy0)\n");
   yylhsminor.yy0 = yymsp[0].minor.yy0;
   yylhsminor.yy0.type = QT_SIZE;
 }
@@ -2247,6 +2266,7 @@ yylhsminor.yy119 = yymsp[0].minor.yy119;
         break;
       case 93: /* param_size ::= ATTRIBUTE */
 {
+  printf("Nafraf: ParserV2 param_size(yylhsminor.yy0) :: ATTRIBUTE(yymsp[0].minor.yy0)\n");
   yylhsminor.yy0 = yymsp[0].minor.yy0;
   yylhsminor.yy0.type = QT_PARAM_SIZE;
 }
@@ -2254,6 +2274,7 @@ yylhsminor.yy119 = yymsp[0].minor.yy119;
         break;
       case 94: /* param_num ::= ATTRIBUTE */
 {
+  printf("Nafraf: ParserV2 param_num(yylhsminor.yy0) :: ATTRIBUTE(yymsp[0].minor.yy0)\n");
     yylhsminor.yy0 = yymsp[0].minor.yy0;
     yylhsminor.yy0.type = QT_PARAM_NUMERIC;
     yylhsminor.yy0.inclusive = 1;
@@ -2262,6 +2283,7 @@ yylhsminor.yy119 = yymsp[0].minor.yy119;
         break;
       case 95: /* param_num ::= num */
 {
+  printf("Nafraf: ParserV2 param_num(yylhsminor.yy0) :: num(yymsp[0].minor.yy47)\n");
   yylhsminor.yy0.numval = yymsp[0].minor.yy47.num;
   yylhsminor.yy0.inclusive = yymsp[0].minor.yy47.inclusive;
   yylhsminor.yy0.type = QT_NUMERIC;
@@ -2270,6 +2292,7 @@ yylhsminor.yy119 = yymsp[0].minor.yy119;
         break;
       case 96: /* param_num ::= LP ATTRIBUTE */
 {
+  printf("Nafraf: ParserV2 param_num(yymsp[-1].minor.yy0) :: LP ATTRIBUTE(yymsp[0].minor.yy0)\n");
     yymsp[-1].minor.yy0 = yymsp[0].minor.yy0;
     yymsp[-1].minor.yy0.type = QT_PARAM_NUMERIC;
     yymsp[-1].minor.yy0.inclusive = 0;

@@ -672,6 +672,7 @@ affix(A) ::= CONTAINS(B) . {
 // }
 
 verbatim(A) ::= WILDCARD(B) . {
+  printf("Nafraf: ParserV2 verbatim(A) ::= WILDCARD(B) . \n");
     A = NewWildcardNode_WithParams(ctx, &B);
 }
 
@@ -1053,14 +1054,17 @@ num(A) ::= MINUS num(B). {
 }
 
 term(A) ::= TERM(B) . {
+  printf("Nafraf: ParserV2 term(A) ::= TERM(%s) .\n", B.s);
   A = B;
 }
 
 term(A) ::= NUMBER(B) . {
+  printf("Nafraf: ParserV2 term(A) ::= NUMBER(B) .\n");
   A = B;
 }
 
 term(A) ::= SIZE(B). {
+  printf("Nafraf: ParserV2 term(A) ::= SIZE(B).\n");
   A = B;
 }
 
@@ -1071,48 +1075,57 @@ term(A) ::= SIZE(B). {
 
 // Number is treated as a term here
 param_term(A) ::= term(B). {
+  printf("Nafraf: ParserV2 param_term(A) :: term(%s)\n", B.s);
   A = B;
   A.type = QT_TERM;
 }
 
 param_term(A) ::= ATTRIBUTE(B). {
+  printf("Nafraf: ParserV2 param_term(A) :: ATTRIBUTE(B)\n");
   A = B;
   A.type = QT_PARAM_TERM;
 }
 
 param_term_case(A) ::= term(B). {
+  printf("Nafraf: ParserV2 param_term_case(A) :: term(B)\n");
   A = B;
   A.type = QT_TERM_CASE;
 }
 
 param_term_case(A) ::= ATTRIBUTE(B). {
+  printf("Nafraf: ParserV2 param_term_case(A) :: ATTRIBUTE(B)\n");
   A = B;
   A.type = QT_PARAM_TERM_CASE;
 }
 
 param_size(A) ::= SIZE(B). {
+  printf("Nafraf: ParserV2 param_size(A) :: SIZE(B)\n");
   A = B;
   A.type = QT_SIZE;
 }
 
 param_size(A) ::= ATTRIBUTE(B). {
+  printf("Nafraf: ParserV2 param_size(A) :: ATTRIBUTE(B)\n");
   A = B;
   A.type = QT_PARAM_SIZE;
 }
 
 param_num(A) ::= ATTRIBUTE(B). {
+  printf("Nafraf: ParserV2 param_num(A) :: ATTRIBUTE(B)\n");
     A = B;
     A.type = QT_PARAM_NUMERIC;
     A.inclusive = 1;
 }
 
 param_num(A) ::= num(B). {
+  printf("Nafraf: ParserV2 param_num(A) :: num(B)\n");
   A.numval = B.num;
   A.inclusive = B.inclusive;
   A.type = QT_NUMERIC;
 }
 
 param_num(A) ::= LP ATTRIBUTE(B). {
+  printf("Nafraf: ParserV2 param_num(A) :: LP ATTRIBUTE(B)\n");
     A = B;
     A.type = QT_PARAM_NUMERIC;
     A.inclusive = 0;

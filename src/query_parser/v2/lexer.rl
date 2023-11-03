@@ -163,6 +163,7 @@ main := |*
   };
   lb => { 
     tok.pos = ts-q->raw;
+    printf("lb: %.*s\n", (int)(te-ts), ts);
     RSQuery_Parse_v2(pParser, LB, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
@@ -170,21 +171,24 @@ main := |*
   };
   rb => { 
     tok.pos = ts-q->raw;
+    printf("rb: %.*s\n", (int)(te-ts), ts);
     RSQuery_Parse_v2(pParser, RB, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
     }
   };
-   colon => { 
-     tok.pos = ts-q->raw;
-     RSQuery_Parse_v2(pParser, COLON, tok, q);
+  colon => { 
+    tok.pos = ts-q->raw;
+    printf("colon: %.*s\n", (int)(te-ts), ts);
+    RSQuery_Parse_v2(pParser, COLON, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
     }
    };
-    semicolon => { 
-     tok.pos = ts-q->raw;
-     RSQuery_Parse_v2(pParser, SEMICOLON, tok, q);
+  semicolon => { 
+    tok.pos = ts-q->raw;
+    printf("semicolon: %.*s\n", (int)(te-ts), ts);
+    RSQuery_Parse_v2(pParser, SEMICOLON, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
     }
@@ -241,6 +245,7 @@ main := |*
     tok.s = ts;
     tok.numval = 0;
     tok.pos = ts-q->raw;
+    printf("escaped term: %.*s\n", (int)tok.len, tok.s);
     RSQuery_Parse_v2(pParser, TERM, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
@@ -253,7 +258,7 @@ main := |*
     tok.s = ts + is_attr;
     tok.numval = 0;
     tok.pos = ts-q->raw;
-
+    printf("prefix: %.*s\n", (int)tok.len, tok.s);
     RSQuery_Parse_v2(pParser, PREFIX, tok, q);
     
     if (!QPCTX_ISOK(q)) {
@@ -267,7 +272,7 @@ main := |*
     tok.s = ts + 1 + is_attr;
     tok.numval = 0;
     tok.pos = ts-q->raw;
-
+    printf("suffix: %.*s\n", (int)tok.len, tok.s);
     RSQuery_Parse_v2(pParser, SUFFIX, tok, q);
     
     if (!QPCTX_ISOK(q)) {
