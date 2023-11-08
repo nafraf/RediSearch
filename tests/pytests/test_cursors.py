@@ -287,6 +287,13 @@ def testCursorOnCoordinator(env):
                 env.assertNotContains(cur_res, result_set)
                 result_set.add(cur_res)
 
+        _, cursor = conn.execute_command('FT.AGGREGATE', 'idx', '*', 'LOAD', '*', 'WITHCURSOR', 'COUNT', 100, 'TIMEOUT', 5000)
+        env.execute_command('FT.CURSOR', 'DEL', 'idx', cursor)
+        # We expect that deleting the cursor will trigger the shards to delete their cursors as well.
+        # Since none of the cursors is expected to be expired, we don't expect `FT.CURSOR GC` to return a positive number.
+        # `FT.CURSOR GC` will return -1 if there are no cursors to delete, and 0 if the cursor list was empty.
+        env.expect('FT.CURSOR', 'GC', '42', '42').equal(0)
+
         with conn.monitor() as monitor:
             # Some periodic cluster commands are sent to the shards and also break the monitor.
             # This function skips them and returns the actual next command we want to observe.
@@ -301,7 +308,7 @@ def testCursorOnCoordinator(env):
                     return next_command() # recursively retry
 
             # Generate the cursor and read all the results
-            res, cursor = conn.execute_command('FT.AGGREGATE', 'idx', '*', 'LOAD', '*', 'WITHCURSOR', 'COUNT', 100)
+            res, cursor = conn.execute_command('FT.AGGREGATE', 'idx', '*', 'LOAD', '*', 'WITHCURSOR', 'COUNT', 100, 'TIMEOUT', 5000)
             add_results(res)
             while cursor:
                 res, cursor = env.cmd('FT.CURSOR', 'READ', 'idx', cursor)
@@ -330,7 +337,7 @@ def testCursorOnCoordinator(env):
                     env.assertTrue(cmd.startswith(exp), message=f'expected `{exp}` but got `{cmd}`')
                     found = True
                     break
-            env.assertTrue(found, message=f'`_FT.CURSOR READ` was not observed within {i} commands')
+            env.assertTrue(found, message=f'`_FT.CURSOR READ` was not observed within 11 commands')
             env.debugPrint(f'Found `_FT.CURSOR READ` in the {number_to_ordinal(i)} try')
 
             env.assertEqual(len(result_set), n_docs)
