@@ -52,7 +52,7 @@ escape = '\\';
 squote = "'";
 escaped_character = escape (punct | space | escape);
 escaped_term = (((any - (punct | cntrl | space | escape)) | escaped_character) | '_')+  $0;
-unescaped_tag = lb . (((any - ( escape | rb ) ) | escape.escape | escape.rb) | '_' )+ . rb $0;
+unescaped_tag = lb (((any - ( escape | rb ) ) | escape.escape | escape.rb) | '_' )+ rb $0;
 term = (unescaped_tag | escaped_term);
 mod = '@'.escaped_term $ 1;
 attr = '$'.escaped_term $ 1;
@@ -165,7 +165,7 @@ main := |*
   };
   lb => { 
     tok.pos = ts-q->raw;
-    printf("lb: %.*s\n", (int)tok.len, tok.s);
+    printf("lb: %.*s\n", (int)(te-ts), ts);
     RSQuery_Parse_v2(pParser, LB, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
@@ -173,7 +173,7 @@ main := |*
   };
   rb => { 
     tok.pos = ts-q->raw;
-    printf("rb: %.*s\n", (int)tok.len, tok.s);
+    printf("rb: %.*s\n", (int)(te-ts), ts);
     RSQuery_Parse_v2(pParser, RB, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
@@ -181,7 +181,7 @@ main := |*
   };
   colon => { 
     tok.pos = ts-q->raw;
-    printf("colon: %.*s\n", (int)tok.len, tok.s);
+    printf("colon: %.*s\n", (int)(te-ts), ts);
     RSQuery_Parse_v2(pParser, COLON, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
@@ -225,6 +225,7 @@ main := |*
   };
   lsqb => { 
     tok.pos = ts-q->raw;
+    printf("lsqb: %.*s\n", (int)(te-ts), ts);
     RSQuery_Parse_v2(pParser, LSQB, tok, q);  
     if (!QPCTX_ISOK(q)) {
       fbreak;
@@ -232,6 +233,7 @@ main := |*
   };
   rsqb => { 
     tok.pos = ts-q->raw;
+    printf("rsqb: %.*s\n", (int)(te-ts), ts);
     RSQuery_Parse_v2(pParser, RSQB, tok, q);   
     if (!QPCTX_ISOK(q)) {
       fbreak;
@@ -254,15 +256,29 @@ main := |*
   };
 
   unescaped_tag => {
+    tok.len = 1;
+    tok.s = ts;
+    tok.numval = 0;
+    tok.pos = ts-q->raw;
+    printf("LB: %.*s\n", (int)(tok.len), tok.s);
+    RSQuery_Parse_v2(pParser, LB, tok, q);
+
     tok.len = te-(ts + 2);
     tok.s = ts + 1;
     tok.numval = 0;
     tok.pos = ts-q->raw;
     printf("unescaped tag: %.*s\n", (int)tok.len, tok.s);
-    RSQuery_Parse_v2(pParser, UNESCAPED_TAG, tok, q);
+    RSQuery_Parse_v2(pParser, TERM, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
     }
+
+    tok.len = 1;
+    tok.s = te - 1;
+    tok.numval = 0;
+    tok.pos = ts-q->raw;
+    printf("RB: %.*s\n", (int)(tok.len), tok.s);
+    RSQuery_Parse_v2(pParser, RB, tok, q);
   };
 
   prefix => {
