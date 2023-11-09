@@ -341,6 +341,7 @@ expr(A) ::= union(B) . [ORX] {
 }
 
 union(A) ::= expr(B) OR expr(C) . [OR] {
+    printf("Nafraf: union(A) ::= expr(B) OR expr(C) . [OR]\n");
     int rv = one_not_null(B, C, (void**)&A);
     if (rv == NODENN_BOTH_INVALID) {
         A = NULL;
@@ -362,6 +363,7 @@ union(A) ::= expr(B) OR expr(C) . [OR] {
 }
 
 union(A) ::= union(B) OR expr(C). [OR] {
+    printf("Nafraf: union(A) ::= union(B) OR expr(C). [OR] \n");
     A = B;
     if (C) {
         QueryNode_AddChild(A, C);
@@ -373,6 +375,7 @@ union(A) ::= union(B) OR expr(C). [OR] {
 // This rule is needed for queries like "hello|(world @loc:[15.65 -15.65 30 ft])", when we discover too late that
 // inside the parentheses there is expr and not text_expr. this can lead to right recursion ONLY with parentheses.
 union(A) ::= text_expr(B) OR expr(C) . [OR] {
+    printf("Nafraf: union(A) ::= text_expr(B) OR expr(C) . [OR] \n");
     int rv = one_not_null(B, C, (void**)&A);
     if (rv == NODENN_BOTH_INVALID) {
         A = NULL;
@@ -394,6 +397,7 @@ union(A) ::= text_expr(B) OR expr(C) . [OR] {
 }
 
 union(A) ::= expr(B) OR text_expr(C) . [OR] {
+    printf("Nafraf: union(A) ::= expr(B) OR text_expr(C) . [OR]\n");
     int rv = one_not_null(B, C, (void**)&A);
     if (rv == NODENN_BOTH_INVALID) {
         A = NULL;
@@ -735,7 +739,7 @@ modifierlist(A) ::= modifierlist(B) OR term(C). {
 // }
 
 expr(A) ::= modifier(B) COLON LB tag_list(C) RB . {
-  printf("Nafraf: ParserV2 expr(A) ::= modifier(B) COLON LB tag_list(C) RB . \n");
+  printf("Nafraf: ParserV2 expr(A) ::= modifier(%s) COLON LB tag_list(C) RB . \n", B.s);
     if (!C) {
         A = NULL;
     } else {
@@ -1095,7 +1099,7 @@ term(A) ::= SIZE(B). {
 term(A) ::= UNESCAPED_TAG(B) . {
   printf("Nafraf: ParserV2 term(A) ::= UNESCAPED_TAG(%s) .\n", B.s);
   A = B;
-  A.type = QT_TERM;
+  // A.type = QT_TERM;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -1123,13 +1127,13 @@ param_term(A) ::= ATTRIBUTE(B). {
 // }
 
 param_term_case(A) ::= term(B). {
-  printf("Nafraf: ParserV2 param_term_case(A) :: term(B)\n");
+  printf("Nafraf: ParserV2 param_term_case(A) ::= term(%s)\n", B.s);
   A = B;
   A.type = QT_TERM_CASE;
 }
 
 param_term_case(A) ::= ATTRIBUTE(B). {
-  printf("Nafraf: ParserV2 param_term_case(A) :: ATTRIBUTE(B)\n");
+  printf("Nafraf: ParserV2 param_term_case(A) :: ATTRIBUTE(%s)\n", B.s);
   A = B;
   A.type = QT_PARAM_TERM_CASE;
 }

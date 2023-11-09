@@ -52,9 +52,12 @@ escape = '\\';
 squote = "'";
 escaped_character = escape (punct | space | escape);
 escaped_term = (((any - (punct | cntrl | space | escape)) | escaped_character) | '_')+ $0;
+
 # tag syntax
-invalid_punct = punct - ('@' | '-' | '+' | '(' | ')' | colon | lb | or);
+valid_punct = ('@' | '-' | '+' | '(' | ')' | colon | lb | '.');
+invalid_punct = punct - valid_punct;
 unescaped_tag = lb ( (any - ( invalid_punct | escape | rb ) ) | (escape (escape | rb)) | '_' )+ rb $0;
+
 # term = (unescaped_tag | escaped_term) ;
 mod = '@'.escaped_term $ 1;
 attr = '$'.escaped_term $ 1;
@@ -93,6 +96,7 @@ main := |*
     tok.pos = ts-q->raw;
     tok.len = te - (ts + 1);
     tok.s = ts+1;
+    printf("mod: %.*s\n", (int)tok.len, tok.s);
     RSQuery_Parse_v2(pParser, MODIFIER, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
