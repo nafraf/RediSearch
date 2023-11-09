@@ -599,6 +599,7 @@ A = B;
 }
 
 termlist(A) ::= param_term(B) param_term(C). [TERMLIST]  {
+  printf("Nafraf: termlist(A) ::= param_term(B) param_term(C). [TERMLIST]\n");
   A = NewPhraseNode(0);
   QueryNode_AddChild(A, NewTokenNode_WithParams(ctx, &B));
   QueryNode_AddChild(A, NewTokenNode_WithParams(ctx, &C));
@@ -734,6 +735,7 @@ modifierlist(A) ::= modifierlist(B) OR term(C). {
 // }
 
 expr(A) ::= modifier(B) COLON LB tag_list(C) RB . {
+  printf("Nafraf: ParserV2 expr(A) ::= modifier(B) COLON LB tag_list(C) RB . \n");
     if (!C) {
         A = NULL;
     } else {
@@ -751,6 +753,7 @@ expr(A) ::= modifier(B) COLON LB tag_list(C) RB . {
 }
 
 tag_list(A) ::= param_term_case(B) . [TAGLIST] {
+  printf("Nafraf: ParserV2 tag_list(A) ::= param_term_case(B) . [TAGLIST] \n");
   A = NewPhraseNode(0);
   QueryNode_AddChild(A, NewTokenNode_WithParams(ctx, &B));
 }
@@ -766,11 +769,19 @@ tag_list(A) ::= verbatim(B) . [TAGLIST] {
 }
 
 tag_list(A) ::= termlist(B) . [TAGLIST] {
+    printf("Nafraf: ParserV2 tag_list(A) ::= termlist(B) . [TAGLIST] \n");
     A = NewPhraseNode(0);
     QueryNode_AddChild(A, B);
 }
 
-tag_list(A) ::= tag_list(B) OR param_term_case(C) . [TAGLIST] {
+// tag_list(A) ::= tag_list(B) OR param_term_case(C) . [TAGLIST] {
+//   printf("Nafraf: ParserV2 tag_list(A) ::= tag_list(B) OR param_term_case(C) . [TAGLIST] \n");
+//   QueryNode_AddChild(B, NewTokenNode_WithParams(ctx, &C));
+//   A = B;
+// }
+
+tag_list(A) ::= tag_list(B) OR param_term(C) . [TAGLIST] {
+  printf("Nafraf: ParserV2 tag_list(A) ::= tag_list(B) OR param_term(C) . [TAGLIST] \n");
   QueryNode_AddChild(B, NewTokenNode_WithParams(ctx, &C));
   A = B;
 }
@@ -1084,6 +1095,7 @@ term(A) ::= SIZE(B). {
 term(A) ::= UNESCAPED_TAG(B) . {
   printf("Nafraf: ParserV2 term(A) ::= UNESCAPED_TAG(%s) .\n", B.s);
   A = B;
+  A.type = QT_TERM;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -1103,6 +1115,12 @@ param_term(A) ::= ATTRIBUTE(B). {
   A = B;
   A.type = QT_PARAM_TERM;
 }
+
+// param_term(A) ::= UNESCAPED_TAG(B). {
+//   printf("Nafraf: ParserV2 param_term(A) :: UNESCAPED_TAG(%.*s)\n", B.len, B.s);
+//   A = B;
+//   A.type = QT_TERM;
+// }
 
 param_term_case(A) ::= term(B). {
   printf("Nafraf: ParserV2 param_term_case(A) :: term(B)\n");

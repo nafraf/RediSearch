@@ -51,9 +51,11 @@ lsqb = '[';
 escape = '\\';
 squote = "'";
 escaped_character = escape (punct | space | escape);
-escaped_term = (((any - (punct | cntrl | space | escape)) | escaped_character) | '_')+  $0;
-unescaped_tag = lb (((any - ( escape | rb ) ) | escape.escape | escape.rb) | '_' )+ rb $0;
-term = (unescaped_tag | escaped_term);
+escaped_term = (((any - (punct | cntrl | space | escape)) | escaped_character) | '_')+ $0;
+# tag syntax
+invalid_punct = punct - ('@' | '-' | '+' | '(' | ')' | colon | lb | or);
+unescaped_tag = lb ( (any - ( invalid_punct | escape | rb ) ) | (escape (escape | rb)) | '_' )+ rb $0;
+# term = (unescaped_tag | escaped_term) ;
 mod = '@'.escaped_term $ 1;
 attr = '$'.escaped_term $ 1;
 contains = (star.escaped_term.star | star.number.star | star.attr.star) $1;
@@ -150,6 +152,7 @@ main := |*
   };
   lp => { 
     tok.pos = ts-q->raw;
+    printf("lp: %.*s\n", (int)(te-ts), ts);
     RSQuery_Parse_v2(pParser, LP, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
@@ -158,6 +161,7 @@ main := |*
 
   rp => { 
     tok.pos = ts-q->raw;
+    printf("rp: %.*s\n", (int)(te-ts), ts);
     RSQuery_Parse_v2(pParser, RP, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
@@ -259,16 +263,17 @@ main := |*
     tok.len = 1;
     tok.s = ts;
     tok.numval = 0;
-    tok.pos = ts-q->raw;
+    tok.pos = tok.s - q->raw;
     printf("LB: %.*s\n", (int)(tok.len), tok.s);
     RSQuery_Parse_v2(pParser, LB, tok, q);
 
     tok.len = te-(ts + 2);
     tok.s = ts + 1;
     tok.numval = 0;
-    tok.pos = ts-q->raw;
+    tok.pos = tok.s - q->raw;
+    tok.type = QT_TERM;
     printf("unescaped tag: %.*s\n", (int)tok.len, tok.s);
-    RSQuery_Parse_v2(pParser, TERM, tok, q);
+    RSQuery_Parse_v2(pParser, UNESCAPED_TAG, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
     }
@@ -276,7 +281,7 @@ main := |*
     tok.len = 1;
     tok.s = te - 1;
     tok.numval = 0;
-    tok.pos = ts-q->raw;
+    tok.pos = tok.s - q->raw;
     printf("RB: %.*s\n", (int)(tok.len), tok.s);
     RSQuery_Parse_v2(pParser, RB, tok, q);
   };

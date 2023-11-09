@@ -360,7 +360,7 @@ def testEmptyTagLeak(env):
     forceInvokeGC(env, 'idx')
     env.expect('FT.DEBUG', 'DUMP_TAGIDX', 'idx', 't').equal([])
 
-def testAutoescapingSingleTag(env):
+def testAutoescapingMultipleConditions(env):
     # Create sample data
     env.cmd('HSET', 'tag:1', 'tag', 'abc:1', 'id', '1')
     env.cmd('HSET', 'tag:2', 'tag', 'xyz:2', 'id', '2')
@@ -387,32 +387,30 @@ def testAutoescapingSingleTag(env):
     # expected_result = [1, 'tag:7']
     # env.assertEqual(expected_result, res)
 
-    # # AND Operator (INTERSECT queries)
-    # res = env.cmd('FT.SEARCH', 'idx', '@tag:{abc:1} @tag:{xyz:2}', 'NOCONTENT')
-    # expected_result = [1, 'tag:3']
-    # env.assertEqual(expected_result, res)
+    # AND Operator (INTERSECT queries)
+    res = env.cmd('FT.SEARCH', 'idx', '@tag:{abc:1} @tag:{xyz:2}', 'NOCONTENT')
+    expected_result = [1, 'tag:3']
+    env.assertEqual(expected_result, res)
 
-    # # Negation Queries (using dash "-")
-    # res = env.cmd('FT.SEARCH', 'idx', '@tag:{abc:1} -@tag:{xyz:2}', 'NOCONTENT')
-    # expected_result = [1, 'tag:1']
-    # env.assertEqual(expected_result, res)
+    # Negation Queries (using dash "-")
+    res = env.cmd('FT.SEARCH', 'idx', '@tag:{abc:1} -@tag:{xyz:2}', 'NOCONTENT')
+    expected_result = [1, 'tag:1']
+    env.assertEqual(expected_result, res)
 
-    # # OR Operator (UNION queries)
+    # OR Operator (UNION queries)
     # res = env.cmd('FT.SEARCH', 'idx', '@tag:{abc:1-xyz:2} | @tag:{joe@mail.com}',
     #               'NOCONTENT', 'SORTBY', 'id', 'ASC')
     # expected_result = [2, 'tag:4', 'tag:5']
-    # env.assertEqual(expected_result, res)
+    env.assertEqual(expected_result, res)
 
-    # # Optional Queries (using tiled "~")
-    # res = env.cmd('FT.SEARCH', 'idx', '@tag:{abc:1} ~@tag:{xyz:2}',
-    #               'NOCONTENT', 'SORTBY', 'id', 'ASC')
-    # expected_result = [2, 'tag:1', 'tag:3']
-    # env.assertEqual(expected_result, res)
+    # Optional Queries (using tiled "~")
+    res = env.cmd('FT.SEARCH', 'idx', '@tag:{abc:1} ~@tag:{xyz:2}',
+                  'NOCONTENT', 'SORTBY', 'id', 'ASC')
+    expected_result = [2, 'tag:1', 'tag:3']
+    env.assertEqual(expected_result, res)
 
-    # Multiple tags between brackets
-    # res = env.cmd('FT.SEARCH', 'idx', '@tag:{}', 'NOCONTENT')
 
-def testAutoescapingMultipleTag(env):
+def testAutoescaping(env):
     # Create sample data
     env.cmd('HSET', 'tag:1', 'tag', 'abc@1', 'id', '1')
     env.cmd('HSET', 'tag:2', 'tag', 'xyz:2', 'id', '2')
@@ -438,10 +436,10 @@ def testAutoescapingMultipleTag(env):
     expected_result = [1, 'tag:1']
     env.assertEqual(expected_result, res)
 
-    # res = env.cmd('FT.SEARCH', 'idx', '@tag:{@12345}', 'NOCONTENT',
-    #               'SORTBY', 'id', 'ASC')
-    # expected_result = [1, 'tag:8']
-    # env.assertEqual(expected_result, res)
+    res = env.cmd('FT.SEARCH', 'idx', '@tag:{@12345}', 'NOCONTENT',
+                  'SORTBY', 'id', 'ASC')
+    expected_result = [1, 'tag:8']
+    env.assertEqual(expected_result, res)
 
     # Test tag with ':'
     res = env.cmd('FT.SEARCH', 'idx', '@tag:{xyz:2}', 'NOCONTENT',
@@ -449,10 +447,10 @@ def testAutoescapingMultipleTag(env):
     expected_result = [1, 'tag:2']
     env.assertEqual(expected_result, res)
 
-    # res = env.cmd('FT.SEARCH', 'idx', '@tag:{:abcde}', 'NOCONTENT',
-    #               'SORTBY', 'id', 'ASC')
-    # expected_result = [1, 'tag:7']
-    # env.assertEqual(expected_result, res)
+    res = env.cmd('FT.SEARCH', 'idx', '@tag:{:abcde}', 'NOCONTENT',
+                  'SORTBY', 'id', 'ASC')
+    expected_result = [1, 'tag:7']
+    env.assertEqual(expected_result, res)
 
     # Test tag with '-'
     res = env.cmd('FT.SEARCH', 'idx', '@tag:{123-4}', 'NOCONTENT',
@@ -466,15 +464,15 @@ def testAutoescapingMultipleTag(env):
     env.assertEqual(expected_result, res)
 
     # Test tag with brackets
-    # res = env.cmd('FT.SEARCH', 'idx', '@tag:{ab{12\\}}', 'NOCONTENT')
-    # expected_result = [1, 'tag:10']
-    # env.assertEqual(expected_result, res)
-
-    # Backard compatibility UNION
-    res = env.cmd('FT.SEARCH', 'idx', '@tag:{01234|abcde}', 'NOCONTENT',
-                  'SORTBY', 'id', 'ASC')
-    expected_result = [3, 'tag:4', 'tag:5', 'tag:6']
+    res = env.cmd('FT.SEARCH', 'idx', '@tag:{ab{12\\}}', 'NOCONTENT')
+    expected_result = [1, 'tag:10']
     env.assertEqual(expected_result, res)
+
+    # # Backard compatibility UNION
+    # res = env.cmd('FT.SEARCH', 'idx', '@tag:{01234|abc@1}', 'NOCONTENT',
+    #               'SORTBY', 'id', 'ASC')
+    # expected_result = [3, 'tag:1', 'tag:4', 'tag:6']
+    # env.assertEqual(expected_result, res)
 
     # # Backard compatibility INTERSECT
     # res = env.cmd('FT.SEARCH', 'idx', '@tag:{abcde,01234}', 'NOCONTENT',
@@ -486,4 +484,3 @@ def testAutoescapingMultipleTag(env):
     #               'SORTBY', 'id', 'ASC')
     # expected_result = [1, 'tag:6']
     # env.assertEqual(expected_result, res)
-
