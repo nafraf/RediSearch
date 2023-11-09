@@ -360,56 +360,6 @@ def testEmptyTagLeak(env):
     forceInvokeGC(env, 'idx')
     env.expect('FT.DEBUG', 'DUMP_TAGIDX', 'idx', 't').equal([])
 
-def testAutoescapingMultipleConditions(env):
-    # Create sample data
-    env.cmd('HSET', 'tag:1', 'tag', 'abc:1', 'id', '1')
-    env.cmd('HSET', 'tag:2', 'tag', 'xyz:2', 'id', '2')
-    env.cmd('HSET', 'tag:3', 'tag', 'xyz:2,abc:1', 'id', '3') # add two tags
-    env.cmd('HSET', 'tag:4', 'tag', 'abc:1-xyz:2', 'id', '4')
-    env.cmd('HSET', 'tag:5', 'tag', 'joe@mail.com', 'id', '5')
-    env.cmd('HSET', 'tag:6', 'tag', 'tag with {brackets}', 'id', '6')
-    env.cmd('HSET', 'tag:7', 'tag', 'abc:1|xyz:2', 'id', '7')
-
-    # Create index
-    env.expect('FT.CREATE idx ON HASH PREFIX 1 tag: SCHEMA tag TAG SORTABLE id NUMERIC SORTABLE').ok()
-    waitForIndex(env, 'idx')
-
-    # Set default dialect to 4 because it supports the autoescaping
-    env.expect("FT.CONFIG SET DEFAULT_DIALECT 4").ok()
-
-    # Test exact match    
-    res = env.cmd('FT.SEARCH', 'idx', '@tag:{abc:1}', 'NOCONTENT',
-                  'SORTBY', 'id', 'ASC')
-    expected_result = [2, 'tag:1', 'tag:3']
-    env.assertEqual(expected_result, res)
-
-    # res = env.cmd('FT.SEARCH', 'idx', '@tag:{abc:1|xyz:2}', 'NOCONTENT')
-    # expected_result = [1, 'tag:7']
-    # env.assertEqual(expected_result, res)
-
-    # AND Operator (INTERSECT queries)
-    res = env.cmd('FT.SEARCH', 'idx', '@tag:{abc:1} @tag:{xyz:2}', 'NOCONTENT')
-    expected_result = [1, 'tag:3']
-    env.assertEqual(expected_result, res)
-
-    # Negation Queries (using dash "-")
-    res = env.cmd('FT.SEARCH', 'idx', '@tag:{abc:1} -@tag:{xyz:2}', 'NOCONTENT')
-    expected_result = [1, 'tag:1']
-    env.assertEqual(expected_result, res)
-
-    # OR Operator (UNION queries)
-    # res = env.cmd('FT.SEARCH', 'idx', '@tag:{abc:1-xyz:2} | @tag:{joe@mail.com}',
-    #               'NOCONTENT', 'SORTBY', 'id', 'ASC')
-    # expected_result = [2, 'tag:4', 'tag:5']
-    env.assertEqual(expected_result, res)
-
-    # Optional Queries (using tiled "~")
-    res = env.cmd('FT.SEARCH', 'idx', '@tag:{abc:1} ~@tag:{xyz:2}',
-                  'NOCONTENT', 'SORTBY', 'id', 'ASC')
-    expected_result = [2, 'tag:1', 'tag:3']
-    env.assertEqual(expected_result, res)
-
-
 def testAutoescaping(env):
     # Create sample data
     env.cmd('HSET', 'tag:1', 'tag', 'abc@1', 'id', '1')
@@ -417,11 +367,15 @@ def testAutoescaping(env):
     env.cmd('HSET', 'tag:3', 'tag', '123-4', 'id', '3')
     env.cmd('HSET', 'tag:4', 'tag', '01234', 'id', '4')
     env.cmd('HSET', 'tag:5', 'tag', 'abcde', 'id', '5')
-    env.cmd('HSET', 'tag:6', 'tag', '01234,abcde', 'id', '6') # add two tags
+    env.cmd('HSET', 'tag:6', 'tag', '01234,abcde', 'id', '6')
     env.cmd('HSET', 'tag:7', 'tag', ':abcde', 'id', '7')
     env.cmd('HSET', 'tag:8', 'tag', '@12345', 'id', '8')
     env.cmd('HSET', 'tag:9', 'tag', '-99999', 'id', '9')
     env.cmd('HSET', 'tag:10', 'tag', 'ab{12}', 'id', '10')
+    env.cmd('HSET', 'tag:11', 'tag', 'abc@1,xyz:2', 'id', '11')
+    env.cmd('HSET', 'tag:12', 'tag', 'you@srv.com', 'id', '12')
+    env.cmd('HSET', 'tag:13', 'tag', 'a|b-c d', 'id', '13')
+
 
     # Create index
     env.expect('FT.CREATE idx ON HASH PREFIX 1 tag: SCHEMA tag TAG SORTABLE id NUMERIC SORTABLE').ok()
@@ -433,7 +387,7 @@ def testAutoescaping(env):
     # Test tag with '@'
     res = env.cmd('FT.SEARCH', 'idx', '@tag:{abc@1}', 'NOCONTENT',
                   'SORTBY', 'id', 'ASC')
-    expected_result = [1, 'tag:1']
+    expected_result = [2, 'tag:1', 'tag:11']
     env.assertEqual(expected_result, res)
 
     res = env.cmd('FT.SEARCH', 'idx', '@tag:{@12345}', 'NOCONTENT',
@@ -444,7 +398,7 @@ def testAutoescaping(env):
     # Test tag with ':'
     res = env.cmd('FT.SEARCH', 'idx', '@tag:{xyz:2}', 'NOCONTENT',
                   'SORTBY', 'id', 'ASC')
-    expected_result = [1, 'tag:2']
+    expected_result = [2, 'tag:2', 'tag:11']
     env.assertEqual(expected_result, res)
 
     res = env.cmd('FT.SEARCH', 'idx', '@tag:{:abcde}', 'NOCONTENT',
@@ -468,13 +422,24 @@ def testAutoescaping(env):
     expected_result = [1, 'tag:10']
     env.assertEqual(expected_result, res)
 
-    # # Backard compatibility UNION
-    # res = env.cmd('FT.SEARCH', 'idx', '@tag:{01234|abc@1}', 'NOCONTENT',
-    #               'SORTBY', 'id', 'ASC')
-    # expected_result = [3, 'tag:1', 'tag:4', 'tag:6']
-    # env.assertEqual(expected_result, res)
+    # Test tag with '|' and ' '
+    res = env.cmd('FT.SEARCH', 'idx', '@tag:{a\\|b-c\\ d}', 'NOCONTENT')
+    expected_result = [1, 'tag:13']
+    env.assertEqual(expected_result, res)
 
-    # # Backard compatibility INTERSECT
+    # Backward compatibility UNION - tags without separators
+    res = env.cmd('FT.SEARCH', 'idx', '@tag:{abcde|01234}', 'NOCONTENT',
+                  'SORTBY', 'id', 'ASC')
+    expected_result = [3, 'tag:4', 'tag:5', 'tag:6']
+    env.assertEqual(expected_result, res)
+
+    res = env.cmd('FT.SEARCH', 'idx', '@tag:{abcde  |  01234}', 'NOCONTENT',
+                  'SORTBY', 'id', 'ASC')
+    env.assertEqual(expected_result, res)
+
+    # TODO:
+    # Bug in version 2.8.4? This does not return results
+    # Backward compatibility INTERSECT - tags without separators
     # res = env.cmd('FT.SEARCH', 'idx', '@tag:{abcde,01234}', 'NOCONTENT',
     #               'SORTBY', 'id', 'ASC')
     # expected_result = [1, 'tag:6']
@@ -482,5 +447,31 @@ def testAutoescaping(env):
 
     # res = env.cmd('FT.SEARCH', 'idx', '@tag:{abcde 01234}', 'NOCONTENT',
     #               'SORTBY', 'id', 'ASC')
-    # expected_result = [1, 'tag:6']
     # env.assertEqual(expected_result, res)
+
+    # If tags contain separators, the operators are not supported
+    env.expect('FT.SEARCH', 'idx', '@tag:{ab@cde|01234}').error()
+    env.expect('FT.SEARCH', 'idx', '@tag:{ab@cde 01234}').error()
+    env.expect('FT.SEARCH', 'idx', '@tag:{ab@cde,01234}').error()
+
+    # AND Operator (INTERSECT queries)
+    res = env.cmd('FT.SEARCH', 'idx', '@tag:{xyz:2} @tag:{abc@1}', 'NOCONTENT')
+    expected_result = [1, 'tag:11']
+    env.assertEqual(expected_result, res)
+
+    # Negation Queries (using dash "-")
+    res = env.cmd('FT.SEARCH', 'idx', '@tag:{abc@1} -@tag:{xyz:2}', 'NOCONTENT')
+    expected_result = [1, 'tag:1']
+    env.assertEqual(expected_result, res)
+
+    # OR Operator (UNION queries)
+    res = env.cmd('FT.SEARCH', 'idx', '@tag:{123-4} | @tag:{you@srv.com}',
+                  'NOCONTENT', 'SORTBY', 'id', 'ASC')
+    expected_result = [2, 'tag:3', 'tag:12']
+    env.assertEqual(expected_result, res)
+
+    # Optional Queries (using tiled "~")
+    res = env.cmd('FT.SEARCH', 'idx', '@tag:{abc@1} ~@tag:{xyz:2}',
+                  'NOCONTENT', 'SORTBY', 'id', 'ASC')
+    expected_result = [2, 'tag:1', 'tag:11']
+    env.assertEqual(expected_result, res)

@@ -53,12 +53,12 @@ squote = "'";
 escaped_character = escape (punct | space | escape);
 escaped_term = (((any - (punct | cntrl | space | escape)) | escaped_character) | '_')+ $0;
 
-# tag syntax
-valid_punct = ('@' | '-' | '+' | '(' | ')' | colon | lb | '.');
+# valid_punct characters are equal to the separators except: or, rb, comma, and escape
+valid_punct = ( '!' | '"' | '#' | '$' | '%' | '&' | squote | '(' | ')' | '*' | '+' | '-' | '.' | '/' | ':' | ';' | '<' | '=' | '>' | '?' | '@' | '[' | ']' | '^' | '`' | '{' | '}' | '~' );
 invalid_punct = punct - valid_punct;
-unescaped_tag = lb ( (any - ( invalid_punct | escape | rb ) ) | (escape (escape | rb)) | '_' )+ rb $0;
+unescaped_tag = lb ( (any - ( invalid_punct | escape | rb | or | space | ',') ) | (escape (escape | rb | or | space | ',')) | '_' )+ rb $0;
 
-# term = (unescaped_tag | escaped_term) ;
+# term = (unescaped_tag | escaped_term);
 mod = '@'.escaped_term $ 1;
 attr = '$'.escaped_term $ 1;
 contains = (star.escaped_term.star | star.number.star | star.attr.star) $1;
