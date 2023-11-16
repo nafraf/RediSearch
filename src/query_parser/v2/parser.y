@@ -18,8 +18,8 @@
 
 %left RP RB RSQB.
 
+%left UNESCAPED_TERM.
 %left TERM.
-%left UNESCAPED_TAG.
 %left QUOTE.
 %left LP LB LSQB.
 
@@ -570,6 +570,24 @@ text_expr(A) ::= QUOTE termlist(B) QUOTE. [TERMLIST] {
   A = B;
 }
 
+text_expr(A) ::= modifier(B) COLON LP termlist(C) RP . {
+  printf("Nafraf: ParserV2 expr(A) ::= modifier(%s) COLON LP termlist(C) RP . \n", B.s);
+    if (!C) {
+        A = NULL;
+    // } else {
+    //   // Tag field names must be case sensitive, we can't do rm_strdupcase
+    //     char *s = rm_strndup(B.s, B.len);
+    //     size_t slen = unescapen((char*)s, B.len);
+
+    //     A = NewTokenNode(s, slen);
+    //     QueryNode_AddChildren(A, C->children, QueryNode_NumChildren(C));
+
+    //     // Set the children count on C to 0 so they won't get recursively free'd
+    //     QueryNode_ClearChildren(C, 0);
+    //     QueryNode_Free(C);
+    }
+}
+
 text_expr(A) ::= QUOTE term(B) QUOTE. [TERMLIST] {
   A = NewTokenNode(ctx, rm_strdupcase(B.s, B.len), -1);
   A->opts.flags |= QueryNode_Verbatim;
@@ -725,18 +743,6 @@ modifierlist(A) ::= modifierlist(B) OR term(C). {
 /////////////////////////////////////////////////////////////////
 // Tag Lists - curly braces separated lists of words
 /////////////////////////////////////////////////////////////////
-
-// FT.SEARCH idx "@a_tag:{joe@mail.com}"
-// expr(A) ::= modifier(B) COLON LB UNESCAPED_TAG(C) RB . {
-//   printf("Nafraf: ParserV2 expr(A) ::= modifier(B) COLON UNESCAPED_TAG(C) . \n");
-
-//   // Tag field names must be case sensitive, we can't do rm_strdupcase
-//   char *s = rm_strndup(B.s, B.len);
-//   size_t slen = unescapen((char*)s, B.len);
-
-//   A = NewTagNode(s, slen);
-//   QueryNode_AddChild(A, NewTokenNode_WithParams(ctx, &C));
-// }
 
 expr(A) ::= modifier(B) COLON LB tag_list(C) RB . {
   printf("Nafraf: ParserV2 expr(A) ::= modifier(%s) COLON LB tag_list(C) RB . \n", B.s);
@@ -1096,11 +1102,20 @@ term(A) ::= SIZE(B). {
   A = B;
 }
 
-term(A) ::= UNESCAPED_TAG(B) . {
-  printf("Nafraf: ParserV2 term(A) ::= UNESCAPED_TAG(%s) .\n", B.s);
+term(A) ::= UNESCAPED_TERM(B) . {
+  printf("Nafraf: ParserV2 term(A) ::= UNESCAPED_TERM(%s) .\n", B.s);
   A = B;
-  // A.type = QT_TERM;
 }
+
+// term(A) ::= UNESCAPED_TAG(B) . {
+//   printf("Nafraf: ParserV2 term(A) ::= UNESCAPED_TAG(%s) .\n", B.s);
+//   A = B;
+// }
+
+// term(A) ::= UNESCAPED_TXT(B) . {
+//   printf("Nafraf: ParserV2 term(A) ::= UNESCAPED_TAG(%s) .\n", B.s);
+//   A = B;
+// }
 
 ///////////////////////////////////////////////////////////////////////////////////
 // Parameterized Primitives (actual numeric or string, or a parameter/placeholder)

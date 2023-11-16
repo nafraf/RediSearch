@@ -56,9 +56,10 @@ escaped_term = (((any - (punct | cntrl | space | escape)) | escaped_character) |
 # valid_punct characters are equal to the separators except: or, rb, comma, and escape
 valid_punct = ( '!' | '"' | '#' | '$' | '%' | '&' | squote | '(' | ')' | '*' | '+' | '-' | '.' | '/' | ':' | ';' | '<' | '=' | '>' | '?' | '@' | '[' | ']' | '^' | '`' | '{' | '}' | '~' );
 invalid_punct = punct - valid_punct;
-unescaped_tag = lb ( (any - ( invalid_punct | escape | rb | or | space | ',') ) | (escape (escape | rb | or | space | ',')) | '_' )+ rb $0;
+# unescaped_tag = lb ( (any - ( invalid_punct | escape | rb | or | space | ',') ) | (escape (escape | rb | or | space | ',')) | '_' )+ :>> rb $4;
+# unescaped_txt = lp ( (any - ( invalid_punct | escape | rb | or | space | ',') ) | (escape (escape | rb | or | space | ',')) | '_' )+ :>> rp $4;
 
-# term = (unescaped_tag | escaped_term);
+# term = (unescaped_tag | unescaped_txt | escaped_term);
 mod = '@'.escaped_term $ 1;
 attr = '$'.escaped_term $ 1;
 contains = (star.escaped_term.star | star.number.star | star.attr.star) $1;
@@ -67,6 +68,10 @@ suffix = (star.escaped_term | star.number | star.attr) $1;
 as = 'AS'|'aS'|'As'|'as';
 verbatim = squote . ((any - squote - escape) | escape.any)+ . squote $4;
 wildcard = 'w' . verbatim $4;
+single_tag = ( (any - ( invalid_punct | escape | rb | or | space | ',') ) | (escape (escape | rb | or | space | ',')) | '_' )+;
+unescaped_tag = lb  (single_tag (or | space | ',')?)* :>> rb $4;
+# unescaped_tag = lb ((any - squote - escape) | escape.any)+ :>> rb $4;
+unescaped_txt = lp ((any - squote - escape) | escape.any)+ :>> rp $4;
 
 main := |*
 
@@ -277,7 +282,7 @@ main := |*
     tok.pos = tok.s - q->raw;
     tok.type = QT_TERM;
     printf("unescaped tag: %.*s\n", (int)tok.len, tok.s);
-    RSQuery_Parse_v2(pParser, UNESCAPED_TAG, tok, q);
+    RSQuery_Parse_v2(pParser, UNESCAPED_TERM, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
     }
@@ -288,6 +293,33 @@ main := |*
     tok.pos = tok.s - q->raw;
     printf("RB: %.*s\n", (int)(tok.len), tok.s);
     RSQuery_Parse_v2(pParser, RB, tok, q);
+  };
+
+  unescaped_txt => {
+    tok.len = 1;
+    tok.s = ts;
+    tok.numval = 0;
+    tok.pos = tok.s - q->raw;
+    printf("LP: %.*s\n", (int)(tok.len), tok.s);
+    RSQuery_Parse_v2(pParser, LP, tok, q);
+
+    tok.len = te-(ts + 2);
+    tok.s = ts + 1;
+    tok.numval = 0;
+    tok.pos = tok.s - q->raw;
+    tok.type = QT_TERM;
+    printf("unescaped txt: %.*s\n", (int)tok.len, tok.s);
+    RSQuery_Parse_v2(pParser, UNESCAPED_TERM, tok, q);
+    if (!QPCTX_ISOK(q)) {
+      fbreak;
+    }
+
+    tok.len = 1;
+    tok.s = te - 1;
+    tok.numval = 0;
+    tok.pos = tok.s - q->raw;
+    printf("RP: %.*s\n", (int)(tok.len), tok.s);
+    RSQuery_Parse_v2(pParser, RP, tok, q);
   };
 
   prefix => {

@@ -475,3 +475,120 @@ def testAutoescaping(env):
                   'NOCONTENT', 'SORTBY', 'id', 'ASC')
     expected_result = [2, 'tag:1', 'tag:11']
     env.assertEqual(expected_result, res)
+
+
+def testAutoescaping2(env):
+    # Create sample data
+    env.cmd('HSET', 'txt:1', 'txt', 'abc@1', 'id', '1')
+    env.cmd('HSET', 'txt:2', 'txt', 'xyz:2', 'id', '2')
+    env.cmd('HSET', 'txt:3', 'txt', '123-4', 'id', '3')
+    env.cmd('HSET', 'txt:4', 'txt', '01234', 'id', '4')
+    env.cmd('HSET', 'txt:5', 'txt', 'abcde', 'id', '5')
+    env.cmd('HSET', 'txt:6', 'txt', '01234,abcde', 'id', '6')
+    env.cmd('HSET', 'txt:7', 'txt', ':abcde', 'id', '7')
+    env.cmd('HSET', 'txt:8', 'txt', '@12345', 'id', '8')
+    env.cmd('HSET', 'txt:9', 'txt', '-99999', 'id', '9')
+    env.cmd('HSET', 'txt:10', 'txt', 'ab{12}', 'id', '10')
+    env.cmd('HSET', 'txt:11', 'txt', 'abc@1,xyz:2', 'id', '11')
+    env.cmd('HSET', 'txt:12', 'txt', 'you@srv.com', 'id', '12')
+    env.cmd('HSET', 'txt:13', 'txt', 'a|b-c d', 'id', '13')
+
+
+    # Create index
+    env.expect('FT.CREATE idx ON HASH PREFIX 1 txt: SCHEMA txt TEXT SORTABLE id NUMERIC SORTABLE').ok()
+    waitForIndex(env, 'idx')
+
+    # Set default dialect to 4 because it supports the autoescaping
+    env.expect("FT.CONFIG SET DEFAULT_DIALECT 4").ok()
+
+    # Test tag with '@'
+    res = env.cmd('FT.SEARCH', 'idx', '@txt:(abc 1)', 'NOCONTENT',
+                  'SORTBY', 'id', 'ASC')
+    expected_result = [2, 'tag:1', 'tag:11']
+    env.assertEqual(expected_result, res)
+
+    res = env.cmd('FT.SEARCH', 'idx', '@txt:(12345)', 'NOCONTENT',
+                  'SORTBY', 'id', 'ASC')
+    expected_result = [1, 'tag:8']
+    env.assertEqual(expected_result, res)
+
+    # Test tag with ':'
+    res = env.cmd('FT.SEARCH', 'idx', '@txt:(xyz 2)', 'NOCONTENT',
+                  'SORTBY', 'id', 'ASC')
+    expected_result = [2, 'tag:2', 'tag:11']
+    env.assertEqual(expected_result, res)
+
+    res = env.cmd('FT.SEARCH', 'idx', '@txt:(abcde)', 'NOCONTENT',
+                  'SORTBY', 'id', 'ASC')
+    expected_result = [1, 'tag:7']
+    env.assertEqual(expected_result, res)
+
+    # Test tag with '-'
+    res = env.cmd('FT.SEARCH', 'idx', '@txt:(123 4)', 'NOCONTENT',
+                  'SORTBY', 'id', 'ASC')
+    expected_result = [1, 'tag:3']
+    env.assertEqual(expected_result, res)
+
+    res = env.cmd('FT.SEARCH', 'idx', '@txt:(99999)', 'NOCONTENT',
+                  'SORTBY', 'id', 'ASC')
+    expected_result = [1, 'tag:9']
+    env.assertEqual(expected_result, res)
+
+    # Test tag with brackets
+    res = env.cmd('FT.SEARCH', 'idx', '@txt:(ab{12\\})', 'NOCONTENT')
+    expected_result = [1, 'tag:10']
+    env.assertEqual(expected_result, res)
+
+    # Test tag with '|' and ' '
+    res = env.cmd('FT.SEARCH', 'idx', '@txt:(a\\|b-c\\ d)', 'NOCONTENT')
+    expected_result = [1, 'tag:13']
+    env.assertEqual(expected_result, res)
+
+    # Backward compatibility UNION - tags without separators
+    res = env.cmd('FT.SEARCH', 'idx', '@txt:(abcde|01234)', 'NOCONTENT',
+                  'SORTBY', 'id', 'ASC')
+    expected_result = [3, 'tag:4', 'tag:5', 'tag:6']
+    env.assertEqual(expected_result, res)
+
+    res = env.cmd('FT.SEARCH', 'idx', '@txt:(abcde  |  01234)', 'NOCONTENT',
+                  'SORTBY', 'id', 'ASC')
+    env.assertEqual(expected_result, res)
+
+    # TODO:
+    # Bug in version 2.8.4? This does not return results
+    # Backward compatibility INTERSECT - tags without separators
+    # res = env.cmd('FT.SEARCH', 'idx', '@txt:(abcde,01234)', 'NOCONTENT',
+    #               'SORTBY', 'id', 'ASC')
+    # expected_result = [1, 'tag:6']
+    # env.assertEqual(expected_result, res)
+
+    # res = env.cmd('FT.SEARCH', 'idx', '@txt:(abcde 01234)', 'NOCONTENT',
+    #               'SORTBY', 'id', 'ASC')
+    # env.assertEqual(expected_result, res)
+
+    # If tags contain separators, the operators are not supported
+    env.expect('FT.SEARCH', 'idx', '@txt:(ab@cde|01234}').error()
+    env.expect('FT.SEARCH', 'idx', '@txt:(ab@cde 01234}').error()
+    env.expect('FT.SEARCH', 'idx', '@txt:(ab@cde,01234}').error()
+
+    # AND Operator (INTERSECT queries)
+    res = env.cmd('FT.SEARCH', 'idx', '@txt:(xyz:2} @txt:(abc@1)', 'NOCONTENT')
+    expected_result = [1, 'tag:11']
+    env.assertEqual(expected_result, res)
+
+    # Negation Queries (using dash "-")
+    res = env.cmd('FT.SEARCH', 'idx', '@txt:(abc@1} -@txt:(xyz:2)', 'NOCONTENT')
+    expected_result = [1, 'tag:1']
+    env.assertEqual(expected_result, res)
+
+    # OR Operator (UNION queries)
+    res = env.cmd('FT.SEARCH', 'idx', '@txt:(123-4} | @txt:(you@srv.com)',
+                  'NOCONTENT', 'SORTBY', 'id', 'ASC')
+    expected_result = [2, 'tag:3', 'tag:12']
+    env.assertEqual(expected_result, res)
+
+    # Optional Queries (using tiled "~")
+    res = env.cmd('FT.SEARCH', 'idx', '@txt:(abc@1} ~@txt:(xyz:2)',
+                  'NOCONTENT', 'SORTBY', 'id', 'ASC')
+    expected_result = [2, 'tag:1', 'tag:11']
+    env.assertEqual(expected_result, res)
