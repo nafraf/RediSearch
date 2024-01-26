@@ -51,6 +51,7 @@ typedef struct {
   TrieMapNode *root;
   size_t cardinality;  // number of terms
   size_t size;         // number of nodes
+  size_t memsize;      // memory occupied by the trie (in bytes)
 } TrieMap;
 
 typedef void (*freeCB)(void *);
