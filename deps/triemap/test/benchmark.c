@@ -50,7 +50,7 @@ void populate(int N) {
     // printf("%s\n", buf);
     dataSize += sz;
     TimeSampler_StartSection(&ts);
-    TrieMap_Add(tm, buf, sz, NULL, NULL);
+    TrieMap_Add(tm, buf, sz, NULL, NULL, NULL);
     TimeSampler_EndSection(&ts);
     TimeSampler_Tick(&ts);
     if (i % 1000000 == 999999) {
@@ -99,7 +99,7 @@ void populate(int N) {
     formatKey((char *)buf, i);
 
     TimeSampler_StartSection(&ts);
-    TrieMap_Delete(tm, buf, strlen((char *)buf), NULL);
+    TrieMap_Delete(tm, buf, strlen((char *)buf), NULL, NULL);
     TimeSampler_EndSection(&ts);
     TimeSampler_Tick(&ts);
 

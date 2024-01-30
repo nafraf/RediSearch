@@ -31,7 +31,7 @@ static int tolistAdd(Reducer *rbase, void *ctx, const RLookupRow *srcrow) {
     if (TrieMap_Find(tlc->values, (char *)&hval, sizeof(hval)) == TRIEMAP_NOTFOUND) {
 
       TrieMap_Add(tlc->values, (char *)&hval, sizeof(hval),
-                  RSValue_IncrRef(RSValue_MakePersistent(v)), NULL);
+                  RSValue_IncrRef(RSValue_MakePersistent(v)), NULL, NULL);
     }
   } else {  // For array values we add each distinct element to the list
     uint32_t len = RSValue_ArrayLen(v);
@@ -41,7 +41,7 @@ static int tolistAdd(Reducer *rbase, void *ctx, const RLookupRow *srcrow) {
       if (TrieMap_Find(tlc->values, (char *)&hval, sizeof(hval)) == TRIEMAP_NOTFOUND) {
 
         TrieMap_Add(tlc->values, (char *)&hval, sizeof(hval),
-                    RSValue_IncrRef(RSValue_MakePersistent(av)), NULL);
+                    RSValue_IncrRef(RSValue_MakePersistent(av)), NULL, NULL);
       }
     }
   }

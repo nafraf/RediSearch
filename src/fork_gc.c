@@ -1063,7 +1063,13 @@ static FGCError FGC_parentHandleTags(ForkGC *gc) {
     // if tag value is empty, let's remove it.
     if (idx->numDocs == 0) {
       info.nbytesCollected += sizeof_InvertedIndex(idx->flags);
-      TrieMap_Delete(tagIdx->values, tagVal, tagValLen, InvertedIndex_Free);
+      size_t before_delete = tagIdx->values->memsize;
+      // TODO: define sizeofFunc
+      // TrieMap_Delete(tagIdx->values, tagVal, tagValLen, InvertedIndex_Free,
+      //                 (sizeofCB)InvertedIndex_MemUsage);
+      TrieMap_Delete(tagIdx->values, tagVal, tagValLen, InvertedIndex_Free,
+                      NULL);
+      info.nbytesCollected += before_delete - tagIdx->values->memsize;
 
       if (tagIdx->suffix) {
         deleteSuffixTrieMap(tagIdx->suffix, tagVal, tagValLen);

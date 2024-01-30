@@ -38,7 +38,10 @@ DocTable NewDocTable(size_t cap, size_t max_size) {
       .maxSize = max_size,
       .dim = NewDocIdMap(),
   };
+  size_t newTrieMapMemSize = ret.dim.tm->memsize;
+  ret.memsize += newTrieMapMemSize;
   ret.buckets = rm_calloc(cap, sizeof(*ret.buckets));
+  ret.memsize += (cap * sizeof(*ret.buckets));
   return ret;
 }
 
@@ -121,10 +124,12 @@ static inline void DocTable_Set(DocTable *t, t_docId docId, RSDocumentMetadata *
      */
     size_t oldcap = t->cap;
     // We grow by half of the current capacity with maximum of 1m
-    t->cap += 1 + (t->cap ? MIN(t->cap / 2, 1024 * 1024) : 1);
-    t->cap = MIN(t->cap, t->maxSize);  // make sure we do not excised maxSize
-    t->cap = MAX(t->cap, bucket + 1);  // docs[bucket] needs to be valid, so t->cap > bucket
+    size_t newcap = oldcap +  1 + (t->cap ? MIN(t->cap / 2, 1024 * 1024) : 1);
+    newcap = MIN(newcap, t->maxSize);  // make sure we do not exceed maxSize
+    newcap = MAX(newcap, bucket + 1);  // docs[bucket] needs to be valid, so t->cap > bucket
+    t->cap = newcap;
     t->buckets = rm_realloc(t->buckets, t->cap * sizeof(DMDChain));
+    t->memsize += (newcap - oldcap) * sizeof(DMDChain);
 
     // We clear new extra allocation to Null all list pointers
     size_t memsetSize = (t->cap - oldcap) * sizeof(DMDChain);
@@ -160,6 +165,7 @@ int DocTable_SetPayload(DocTable *t, RSDocumentMetadata *dmd, const char *data, 
     t->memsize -= dmd->payload->len;
   } else {
     dmd->payload = rm_malloc(sizeof(RSPayload));
+    t->memsize += sizeof(RSPayload);
   }
   /* Copy it... */
   dmd->payload->data = rm_calloc(1, len + 1);
@@ -167,7 +173,7 @@ int DocTable_SetPayload(DocTable *t, RSDocumentMetadata *dmd, const char *data, 
   memcpy(dmd->payload->data, data, len);
 
   dmd->flags |= Document_HasPayload;
-  t->memsize += len;
+  t->memsize += len + 1;
   return 1;
 }
 
@@ -250,7 +256,7 @@ RSDocumentMetadata *DocTable_Put(DocTable *t, const char *s, size_t n, double sc
     dpl->data = rm_calloc(1, payloadSize + 1);
     memcpy(dpl->data, payload, payloadSize);
     dpl->len = payloadSize;
-    t->memsize += payloadSize + sizeof(RSPayload);
+    t->memsize += (payloadSize + 1) + sizeof(RSPayload);
 
     dmd->payload = dpl;
   }
@@ -258,7 +264,7 @@ RSDocumentMetadata *DocTable_Put(DocTable *t, const char *s, size_t n, double sc
   DocTable_Set(t, docId, dmd);
   ++t->size;
   t->memsize += sdsAllocSize(keyPtr);
-  DocIdMap_Put(&t->dim, s, n, docId);
+  t->memsize += DocIdMap_Put(&t->dim, s, n, docId);
   DMD_Incref(dmd); // Reference for the caller
   return dmd;
 }
@@ -380,7 +386,7 @@ int DocTable_Replace(DocTable *t, const char *from_str, size_t from_len, const c
     return REDISMODULE_ERR;
   }
   DocIdMap_Delete(&t->dim, from_str, from_len);
-  DocIdMap_Put(&t->dim, to_str, to_len, id);
+  t->memsize += DocIdMap_Put(&t->dim, to_str, to_len, id);
   RSDocumentMetadata *dmd = DocTable_GetOwn(t, id);
   sdsfree(dmd->keyPtr);
   dmd->keyPtr = sdsnewlen(to_str, to_len);
@@ -448,9 +454,11 @@ void DocTable_LegacyRdbLoad(DocTable *t, RedisModuleIO *rdb, int encver) {
      * could still be accessed for simple queries (e.g. get, exist). Ensure
      * we don't have to rely on Set/Put to ensure the doc table array.
      */
+    size_t delta_cap = t->maxSize - t->cap;
     t->cap = t->maxSize;
     rm_free(t->buckets);
     t->buckets = rm_calloc(t->cap, sizeof(*t->buckets));
+    t->memsize = sizeof(DocTable) + (delta_cap * sizeof(*t->buckets));
   }
 
   for (size_t i = 1; i < t->size; i++) {
@@ -515,7 +523,7 @@ void DocTable_LegacyRdbLoad(DocTable *t, RedisModuleIO *rdb, int encver) {
       ++deletedElements;
       DMD_Free(dmd);
     } else {
-      DocIdMap_Put(&t->dim, dmd->keyPtr, sdslen(dmd->keyPtr), dmd->id);
+      t->memsize += DocIdMap_Put(&t->dim, dmd->keyPtr, sdslen(dmd->keyPtr), dmd->id);
       DocTable_Set(t, dmd->id, dmd);
       t->memsize += sizeof(RSDocumentMetadata) + len;
     }
@@ -636,16 +644,20 @@ t_docId DocIdMap_Get(const DocIdMap *m, const char *s, size_t n) {
 
 void *_docIdMap_replace(void *oldval, void *newval) {
   if (oldval) {
+    printf("Nafraf: sizeof(odlval): %zu\n", sizeof(oldval));
     rm_free(oldval);
   }
   return newval;
 }
 
-void DocIdMap_Put(DocIdMap *m, const char *s, size_t n, t_docId docId) {
+size_t DocIdMap_Put(DocIdMap *m, const char *s, size_t n, t_docId docId) {
 
   t_docId *pd = rm_malloc(sizeof(t_docId));
   *pd = docId;
-  TrieMap_Add(m->tm, (char *)s, n, pd, _docIdMap_replace);
+  // TODO: define sizeofFunc?
+  // TODO: should I count m->tm->memsize?
+  TrieMap_Add(m->tm, (char *)s, n, pd, _docIdMap_replace, NULL);
+  return sizeof(t_docId);
 }
 
 void DocIdMap_Free(DocIdMap *m) {
@@ -653,5 +665,6 @@ void DocIdMap_Free(DocIdMap *m) {
 }
 
 int DocIdMap_Delete(DocIdMap *m, const char *s, size_t n) {
-  return TrieMap_Delete(m->tm, (char *)s, n, rm_free);
+  // TODO: define sizeofFunc?
+  return TrieMap_Delete(m->tm, (char *)s, n, rm_free, NULL);
 }

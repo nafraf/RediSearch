@@ -241,6 +241,9 @@ static inline void *array_trimm(array_t arr, uint32_t len, uint32_t cap) {
   return arr_hdr->buf;
 }
 
+/* Get memory size occupied by the array (in bytes)*/
+size_t array_memsize(array_t arr);
+
 /* Trim array by `len` elements */
 #define array_trimm_len(arr, len) (__typeof__(arr)) array_trimm(arr, array_len(arr) - (len), ARR_CAP_NOSHRINK)
 

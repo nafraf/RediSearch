@@ -14,7 +14,7 @@ TrieMap *loadTrieMap() {
   const char *words[] = {"he", "her", "hell", "help", "helper", "hello",
                          "hello world", "towel", "dealer", "bell"};
   for (int i = 0; i < 10; ++i) {
-    TrieMap_Add(t, (char *)words[i], strlen(words[i]), (void *)words[i], NULL);
+    TrieMap_Add(t, (char *)words[i], strlen(words[i]), (void *)words[i], NULL, NULL);
   }
   return t;
 }
@@ -96,10 +96,10 @@ TEST_F(TrieMapTest, testLexOrder) {
   checkNext(iter, "towel");
   TrieMapIterator_Free(iter);
 
-  TrieMap_Delete(t, "hello world", 11, testFreeCB);
-  TrieMap_Delete(t, "dealer", 6, testFreeCB);
-  TrieMap_Delete(t, "help", 4, testFreeCB);
-  TrieMap_Delete(t, "her", 3, testFreeCB);
+  TrieMap_Delete(t, "hello world", 11, testFreeCB, NULL);
+  TrieMap_Delete(t, "dealer", 6, testFreeCB, NULL);
+  TrieMap_Delete(t, "help", 4, testFreeCB, NULL);
+  TrieMap_Delete(t, "her", 3, testFreeCB, NULL);
 
   iter = TrieMap_Iterate(t, "", 0);
   checkNext(iter, "bell");

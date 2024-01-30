@@ -55,6 +55,7 @@ typedef struct {
 } TrieMap;
 
 typedef void (*freeCB)(void *);
+typedef size_t (*sizeofCB)(void *);
 
 TrieMap *NewTrieMap();
 
@@ -63,7 +64,7 @@ typedef void *(*TrieMapReplaceFunc)(void *oldval, void *newval);
 /* Add a new string to a trie. Returns 1 if the key is new to the trie or 0 if
  * it already existed.
  *
- * If value is given, it is saved as a pyaload inside the trie node.
+ * If value is given, it is saved as a payload inside the trie node.
  * If the key already exists, we replace the old value with the new value, using
  * free() to free the old value.
  *
@@ -72,7 +73,8 @@ typedef void *(*TrieMapReplaceFunc)(void *oldval, void *newval);
  * node, and take care of freeing any unwanted pointers. The returned value
  * can be NULL and doesn't have to be either the old or new value.
  */
-int TrieMap_Add(TrieMap *t, char *str, tm_len_t len, void *value, TrieMapReplaceFunc cb);
+int TrieMap_Add(TrieMap *t, char *str, tm_len_t len, void *value,
+                TrieMapReplaceFunc cb, sizeofCB sizefunc);
 
 /* Find the entry with a given string and length, and return its value, even if
  * that was NULL.
@@ -90,7 +92,7 @@ int TrieMap_FindPrefixes(TrieMap *t, const char *str, tm_len_t len, arrayof(void
 /* Mark a node as deleted. It also optimizes the trie by merging nodes if
  * needed. If freeCB is given, it will be used to free the value of the deleted
  * node. If it doesn't, we simply call free() */
-int TrieMap_Delete(TrieMap *t, const char *str, tm_len_t len, freeCB func);
+int TrieMap_Delete(TrieMap *t, const char *str, tm_len_t len, freeCB func, sizeofCB sizefunc);
 
 /* Free the trie's root and all its children recursively. If freeCB is given, we
  * call it to free individual payload values. If not, free() is used instead. */

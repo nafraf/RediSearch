@@ -134,7 +134,9 @@ struct InvertedIndex *TagIndex_OpenIndex(TagIndex *idx, const char *value,
   if (iv == TRIEMAP_NOTFOUND) {
     if (create) {
       iv = NewInvertedIndex(Index_DocIdsOnly, 1, sz);
-      TrieMap_Add(idx->values, (char *)value, len, iv, NULL);
+      size_t memSize_before_add = idx->values->memsize;
+      TrieMap_Add(idx->values, (char *)value, len, iv, NULL, NULL);
+      *(sz) += (idx->values->memsize - memSize_before_add);
     }
   }
   return iv;
@@ -324,7 +326,7 @@ void *TagIndex_RdbLoad(RedisModuleIO *rdb, int encver) {
     char *s = RedisModule_LoadStringBuffer(rdb, &slen);
     InvertedIndex *inv = InvertedIndex_RdbLoad(rdb, INVERTED_INDEX_ENCVER);
     RS_LOG_ASSERT(inv, "loading inverted index from rdb failed");
-    TrieMap_Add(idx->values, s, MIN(slen, MAX_TAG_LEN), inv, NULL);
+    TrieMap_Add(idx->values, s, MIN(slen, MAX_TAG_LEN), inv, NULL, NULL);
     RedisModule_Free(s);
   }
   return idx;

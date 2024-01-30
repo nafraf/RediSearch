@@ -201,6 +201,13 @@ static void SchemaPrefixNode_Free(SchemaPrefixNode *node) {
   rm_free(node);
 }
 
+static size_t SchemaPrefixNode_SizeOf(SchemaPrefixNode *node) {
+  size_t size = sizeof(*node);
+  size += node->prefix ? strlen(node->prefix) + 1 : 0;
+  size += array_memsize(node->index_specs);
+  return size;
+}
+
 //---------------------------------------------------------------------------------------------
 
 RSLanguage SchemaRule_HashLang(RedisModuleCtx *rctx, const SchemaRule *rule, RedisModuleKey *key,
@@ -526,7 +533,7 @@ void SchemaPrefixes_Add(const char *prefix, StrongRef ref) {
   void *p = TrieMap_Find(SchemaPrefixes_g, (char *)prefix, nprefix);
   if (p == TRIEMAP_NOTFOUND) {
     SchemaPrefixNode *node = SchemaPrefixNode_Create(prefix, ref);
-    TrieMap_Add(SchemaPrefixes_g, (char *)prefix, nprefix, node, NULL);
+    TrieMap_Add(SchemaPrefixes_g, (char *)prefix, nprefix, node, NULL, NULL);
   } else {
     SchemaPrefixNode *node = (SchemaPrefixNode *)p;
     node->index_specs = array_append(node->index_specs, ref);
@@ -550,7 +557,8 @@ void SchemaPrefixes_RemoveSpec(StrongRef ref) {
         array_del_fast(node->index_specs, j);
         if (array_len(node->index_specs) == 0) {
           // if all specs were deleted, remove the node
-          TrieMap_Delete(SchemaPrefixes_g, prefixes[i], strlen(prefixes[i]), (freeCB)SchemaPrefixNode_Free);
+          TrieMap_Delete(SchemaPrefixes_g, prefixes[i], strlen(prefixes[i]),
+            (freeCB)SchemaPrefixNode_Free, (sizeofCB)SchemaPrefixNode_SizeOf);
         }
         break;
       }

@@ -19,7 +19,7 @@ C implementation of a compact trie lookup map
 
  for (int i = 0; i < 100; i++) {
     sprintf(buf, "key%d", i);
-    TrieMap_Add(tm, buf, strlen(buf), NULL, NULL);
+    TrieMap_Add(tm, buf, strlen(buf), NULL, NULL, NULL);
  }
  
   TrieMapIterator *it = TrieMap_Iterate(tm, "key1", 4);

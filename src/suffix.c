@@ -43,6 +43,13 @@ static void freeSuffixNode(suffixData *node) {
   rm_free(node);
 }
 
+size_t sizeofSuffixNode(suffixData *node) {
+  size_t size = sizeof(*node);
+  size += node->term ? strlen(node->term) : 0;
+  size += array_memsize(node->array);
+  return size;
+}
+
 void addSuffixTrie(Trie *trie, const char *str, uint32_t len) {
   //if () {}  check here gor other types
   size_t rlen = 0;
@@ -378,7 +385,7 @@ size_t addSuffixTrieMap(TrieMap *trie, const char *str, uint32_t len) {
     data->array = array_ensure_append_1(data->array, copyStr);
     sz = sizeof(*data);
     size_t initialTrieMapMemSize = trie->memsize;
-    TrieMap_Add(trie, copyStr, len, data, NULL);
+    TrieMap_Add(trie, copyStr, len, data, NULL, NULL);
     size_t newTrieMapMemSize = trie->memsize;
     sz += newTrieMapMemSize - initialTrieMapMemSize;
   } else {    // node exists as suffix for other term
@@ -397,7 +404,7 @@ size_t addSuffixTrieMap(TrieMap *trie, const char *str, uint32_t len) {
       data->array = array_ensure_append_1(data->array, copyStr);
       sz = sizeof(*data);
       size_t initialTrieMapMemSize = trie->memsize;
-      TrieMap_Add(trie, copyStr + j, len - j, data, NULL);
+      TrieMap_Add(trie, copyStr + j, len - j, data, NULL, NULL);
       size_t newTrieMapMemSize = trie->memsize;
       sz += newTrieMapMemSize - initialTrieMapMemSize;
     } else {
@@ -428,7 +435,8 @@ void deleteSuffixTrieMap(TrieMap *trie, const char *str, uint32_t len) {
     // if array is empty, remove the node
     if (array_len(data->array) == 0) {
       RS_LOG_ASSERT(!data->term, "array should contain a pointer to the string");
-      TrieMap_Delete(trie, str + j, len - j, (freeCB)freeSuffixNode);
+      TrieMap_Delete(trie, str + j, len - j, (freeCB)freeSuffixNode,
+                      (sizeofCB)sizeofSuffixNode);
     }
   }
   rm_free(oldTerm);

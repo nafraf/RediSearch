@@ -83,7 +83,7 @@ StopWordList *NewStopWordListCStr(const char **strs, size_t len) {
       }
     }
     // printf("Adding stopword %s\n", t);
-    TrieMap_Add(sl->m, t, tlen, NULL, NULL);
+    TrieMap_Add(sl->m, t, tlen, NULL, NULL, NULL);
     rm_free(t);
   }
   if (len == 0) {
@@ -138,7 +138,7 @@ StopWordList *StopWordList_RdbLoad(RedisModuleIO *rdb, int encver) {
   while (elements--) {
     size_t len;
     char *str = LoadStringBuffer_IOError(rdb, &len, goto cleanup);
-    TrieMap_Add(sl->m, str, len, NULL, NULL);
+    TrieMap_Add(sl->m, str, len, NULL, NULL, NULL);
     RedisModule_Free(str);
   }
 

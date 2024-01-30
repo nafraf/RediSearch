@@ -14,9 +14,9 @@ void testTrie() {
     sprintf(buf, "key%d", i);
     int *pi = malloc(sizeof(int));
     *pi = i;
-    int rc = TrieMap_Add(tm, buf, strlen(buf), NULL, NULL);
+    int rc = TrieMap_Add(tm, buf, strlen(buf), NULL, NULL, NULL);
     mu_check(rc);
-    rc = TrieMap_Add(tm, buf, strlen(buf), pi, NULL);
+    rc = TrieMap_Add(tm, buf, strlen(buf), pi, NULL, NULL);
     mu_check(rc == 0);
   }
   mu_assert_int_eq(100, tm->cardinality);
@@ -24,9 +24,9 @@ void testTrie() {
   // check insertion of empty node
   int *empty = malloc(sizeof(int));
   *empty = 1337;
-  mu_check(1 == TrieMap_Add(tm, "", 0, NULL, NULL));
+  mu_check(1 == TrieMap_Add(tm, "", 0, NULL, NULL, NULL));
   mu_assert_int_eq(101, tm->cardinality);
-  mu_check(0 == TrieMap_Add(tm, "", 0, empty, NULL));
+  mu_check(0 == TrieMap_Add(tm, "", 0, empty, NULL, NULL));
   mu_assert_int_eq(101, tm->cardinality);
   void *ptr = TrieMap_Find(tm, "", 0);
   mu_check(ptr != TRIEMAP_NOTFOUND);
@@ -47,9 +47,9 @@ void testTrie() {
   for (int i = 0; i < 100; i++) {
     sprintf(buf, "key%d", i);
 
-    int rc = TrieMap_Delete(tm, buf, strlen(buf), NULL);
+    int rc = TrieMap_Delete(tm, buf, strlen(buf), NULL, NULL);
     mu_check(rc);
-    rc = TrieMap_Delete(tm, buf, strlen(buf), NULL);
+    rc = TrieMap_Delete(tm, buf, strlen(buf), NULL, NULL);
     mu_check(rc == 0);
     mu_check(tm->cardinality == 100 - i - 1);
   }
@@ -66,10 +66,10 @@ void testTrieIterator() {
     sprintf(buf, "key%d", i);
     int *pi = malloc(sizeof(int));
     *pi = i;
-    TrieMap_Add(tm, buf, strlen(buf), pi, NULL);
+    TrieMap_Add(tm, buf, strlen(buf), pi, NULL, NULL);
   }
   mu_assert_int_eq(100, tm->cardinality);
-  mu_check(1 == TrieMap_Add(tm, "", 0, NULL, NULL));
+  mu_check(1 == TrieMap_Add(tm, "", 0, NULL, NULL, NULL));
   mu_assert_int_eq(101, tm->cardinality);
 
   TrieMapIterator *it = TrieMap_Iterate(tm, "key1", 4);
@@ -121,7 +121,7 @@ void testRandomWalk() {
 
   for (int i = 0; i < N; i++) {
     sprintf(buf, "key%d", i);
-    TrieMap_Add(tm, buf, strlen(buf), rm_strdup(buf), NULL);
+    TrieMap_Add(tm, buf, strlen(buf), rm_strdup(buf), NULL, NULL);
   }
 
   for (int i = 1; i < 9; i++) {
@@ -155,7 +155,7 @@ void testRandom() {
 
     int *pi = malloc(sizeof(int));
     *pi = i + 1;
-    TrieMap_Add(tm, buf, n, pi, NULL);
+    TrieMap_Add(tm, buf, n, pi, NULL, NULL);
     // if (i % 1000 == 0) printf("%d\n", i);
   }
   mu_assert_int_eq(N, tm->cardinality);

@@ -66,7 +66,7 @@ int Ext_RegisterScoringFunction(const char *alias, RSScoringFunction func, RSFre
     return REDISEARCH_ERR;
   }
 
-  TrieMap_Add(scorers_g, (char *)alias, strlen(alias), ctx, NULL);
+  TrieMap_Add(scorers_g, (char *)alias, strlen(alias), ctx, NULL, NULL);
   return REDISEARCH_OK;
 }
 
@@ -86,7 +86,7 @@ int Ext_RegisterQueryExpander(const char *alias, RSQueryTokenExpander exp, RSFre
     rm_free(ctx);
     return REDISEARCH_ERR;
   }
-  TrieMap_Add(queryExpanders_g, (char *)alias, strlen(alias), ctx, NULL);
+  TrieMap_Add(queryExpanders_g, (char *)alias, strlen(alias), ctx, NULL, NULL);
   return REDISEARCH_OK;
 }
 

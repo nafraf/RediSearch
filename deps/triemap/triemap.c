@@ -9,7 +9,9 @@
 
 void *TRIEMAP_NOTFOUND = "NOT FOUND";
 
-void TrieMapNode_Free(TrieMapNode *n, void (*freeCB)(void *), size_t *memSize);
+void TrieMapNode_Free(TrieMapNode *n, freeCB freecb, sizeofCB sizecb,
+                                size_t *memSize);
+
 static inline void __trieNode_sortChildren(TrieMapNode *n);
 
 /* Get a pointer to the children array of a node. This is not an actual member
@@ -30,7 +32,10 @@ size_t __trieMapNode_Sizeof(tm_len_t numChildren, tm_len_t slen) {
   return (sizeof(TrieMapNode) + numChildren * sizeof(TrieMapNode *) + (slen + 1) + numChildren);
 }
 
-TrieMapNode *__trieMapNode_resizeChildren(TrieMapNode *n, int offset) {
+TrieMapNode *__trieMapNode_resizeChildren(TrieMapNode *n, int offset, size_t *memSize) {
+  // TODO: Simplify this..
+  *(memSize) += __trieMapNode_Sizeof(n->numChildren + offset, n->len) -
+             __trieMapNode_Sizeof(offset, n->len);
   n = rm_realloc(n, __trieMapNode_Sizeof(n->numChildren + offset, n->len));
   TrieMapNode **children = __trieMapNode_children(n);
 
@@ -72,10 +77,10 @@ TrieMap *NewTrieMap() {
 
 // Adds child to TrieMapNode n at idx.
 // The size of new node is added to *memSize
-TrieMapNode *__trieMapNode_AddChildIdx(TrieMapNode *n, char *str,
+static TrieMapNode *__trieMapNode_AddChildIdx(TrieMapNode *n, char *str,
             tm_len_t offset, tm_len_t len, void *value, int idx, size_t *memSize) {
   // make room for another child
-  n = __trieMapNode_resizeChildren(n, 1);
+  n = __trieMapNode_resizeChildren(n, 1, memSize);
 
   // a newly added child must be a terminal node
   TrieMapNode *child = __newTrieMapNode(str, offset, len, 0, value, 1, memSize);
@@ -100,6 +105,7 @@ TrieMapNode *__trieMapNode_Split(TrieMapNode *n, tm_len_t offset, size_t *memSiz
   memcpy(newChildren, children, sizeof(TrieMapNode *) * n->numChildren);
   memcpy(__trieMapNode_childKey(newChild, 0), __trieMapNode_childKey(n, 0), n->numChildren);
   // reduce the node to be just one child long with no score
+  memSize -= __trieMapNode_Sizeof(n->numChildren, n->len);
   n->numChildren = 1;
   n->len = offset;
   n->value = NULL;
@@ -107,6 +113,7 @@ TrieMapNode *__trieMapNode_Split(TrieMapNode *n, tm_len_t offset, size_t *memSiz
   n->flags = 0;  //&= ~(TM_NODE_TERMINAL | TM_NODE_DELETED);
 
   n = rm_realloc(n, __trieMapNode_Sizeof(n->numChildren, n->len));
+  memSize += __trieMapNode_Sizeof(n->numChildren, n->len);
   __trieMapNode_children(n)[0] = newChild;
   *__trieMapNode_childKey(n, 0) = newChild->str[0];
   __trieNode_sortChildren(n);
@@ -114,7 +121,7 @@ TrieMapNode *__trieMapNode_Split(TrieMapNode *n, tm_len_t offset, size_t *memSiz
 }
 
 int TrieMapNode_Add(TrieMapNode **np, char *str, tm_len_t len, void *value,
-                    TrieMapReplaceFunc cb, size_t *memSize) {
+                    TrieMapReplaceFunc cb, sizeofCB sizecb, size_t *memSize) {
   TrieMapNode *n = *np;
   int rv = 0;
 
@@ -155,15 +162,18 @@ int TrieMapNode_Add(TrieMapNode **np, char *str, tm_len_t len, void *value,
     int deleted = __trieMapNode_isDeleted(n);
 
     if (cb) {
-      // TODO: substract the freed size from memsize
-      //memSize -= freeSize(); ???
+      // TODO: substract the freed size from memsize or do it in the callback?
+      if(n->value) {
+        *memSize -= sizecb ? sizecb(n->value) : sizeof(n->value);
+      }
+      *memSize += sizecb ? sizecb(value) : sizeof(value);
       n->value = cb(n->value, value);
     } else {
       if (n->value) {
-        // TODO: substract the freed size from memsize
-        //memSize -= freeSize(); ???
+        *memSize -= sizecb ? sizecb(n->value) : sizeof(n->value);
         rm_free(n->value);
       }
+      *memSize += sizecb ? sizecb(value) : sizeof(value);
       n->value = value;
     }
 
@@ -184,7 +194,7 @@ int TrieMapNode_Add(TrieMapNode **np, char *str, tm_len_t len, void *value,
   if (ptr != NULL) {
     const size_t char_offset = ptr - childKeys;
     TrieMapNode *child = __trieMapNode_children(n)[char_offset];
-    rv = TrieMapNode_Add(&child, str + offset, len - offset, value, cb, memSize);
+    rv = TrieMapNode_Add(&child, str + offset, len - offset, value, cb, sizecb, memSize);
     __trieMapNode_children(n)[char_offset] = child;
     return rv;
   }
@@ -195,9 +205,10 @@ int TrieMapNode_Add(TrieMapNode **np, char *str, tm_len_t len, void *value,
   return ++rv;
 }
 
-int TrieMap_Add(TrieMap *t, char *str, tm_len_t len, void *value, TrieMapReplaceFunc cb) {
+int TrieMap_Add(TrieMap *t, char *str, tm_len_t len, void *value,
+                TrieMapReplaceFunc cb, sizeofCB sizecb) {
   size_t memSize = 0;
-  int rc = TrieMapNode_Add(&t->root, str, len, value, cb, &memSize);
+  int rc = TrieMapNode_Add(&t->root, str, len, value, cb, sizecb, &memSize);
   t->size += rc;
   t->memsize += memSize;
   int added = rc ? 1 : 0;
@@ -394,6 +405,7 @@ TrieMapNode *__trieMapNode_MergeWithSingleChild(TrieMapNode *n, size_t *memSize)
   memcpy(__trieMapNode_children(merged), __trieMapNode_children(ch),
          sizeof(TrieMapNode *) * merged->numChildren);
   memcpy(__trieMapNode_childKey(merged, 0), __trieMapNode_childKey(ch, 0), merged->numChildren);
+  memSize -= __trieMapNode_Sizeof(n->numChildren, n->len);
   rm_free(n);
   rm_free(ch);
 
@@ -404,7 +416,8 @@ TrieMapNode *__trieMapNode_MergeWithSingleChild(TrieMapNode *n, size_t *memSize)
  *   1. If a child should be deleted - delete it and reduce the child count
  *   2. If a child has a single child - merge them
  */
-int __trieMapNode_optimizeChildren(TrieMapNode *n, void (*freeCB)(void *), size_t *memSize) {
+int __trieMapNode_optimizeChildren(TrieMapNode *n, void (*freeCB)(void *),
+                                  sizeofCB sizecb, size_t *memSize) {
   int rc = 0;
   int i = 0;
   TrieMapNode **nodes = __trieMapNode_children(n);
@@ -412,7 +425,7 @@ int __trieMapNode_optimizeChildren(TrieMapNode *n, void (*freeCB)(void *), size_
   while (i < n->numChildren) {
     // if this is a deleted node with no children - remove it
     if (nodes[i]->numChildren == 0 && __trieMapNode_isDeleted(nodes[i])) {
-      TrieMapNode_Free(nodes[i], freeCB, memSize);
+      TrieMapNode_Free(nodes[i], freeCB, sizecb, memSize);
 
       nodes[i] = NULL;
       char *nk = __trieMapNode_childKey(n, i);
@@ -442,7 +455,7 @@ int __trieMapNode_optimizeChildren(TrieMapNode *n, void (*freeCB)(void *), size_
 }
 
 int TrieMapNode_Delete(TrieMapNode *n, const char *str, tm_len_t len,
-                      void (*freeCB)(void *), size_t *memSize) {
+                      void (*freeCB)(void *), sizeofCB sizeCB, size_t *memSize) {
   tm_len_t offset = 0;
   int stackCap = 8;
   TrieMapNode **stack = rm_calloc(stackCap, sizeof(TrieMapNode *));
@@ -470,8 +483,7 @@ int TrieMapNode_Delete(TrieMapNode *n, const char *str, tm_len_t len,
           n->flags &= ~TM_NODE_TERMINAL;
 
           if (n->value) {
-            // TODO: substract the freed size from memsize
-            //memSize -= freeSize(); ???
+            *memSize -= sizeCB ? sizeCB(n->value) : sizeof(n->value);
             if (freeCB) {
               freeCB(n->value);
             } else {
@@ -506,15 +518,14 @@ end:
 
   size_t dummySize = 0;
   while (stackPos--) {
-    rc += __trieMapNode_optimizeChildren(stack[stackPos], freeCB, &dummySize);
+    rc += __trieMapNode_optimizeChildren(stack[stackPos], freeCB, NULL, &dummySize);
   }
   rm_free(stack);
   return rc;
 }
 
-int TrieMap_Delete(TrieMap *t, const char *str, tm_len_t len, freeCB func) {
-  size_t freeMemSize = 0;
-  int rc = TrieMapNode_Delete(t->root, str, len, func, &(t->memsize));
+int TrieMap_Delete(TrieMap *t, const char *str, tm_len_t len, freeCB freecb, sizeofCB sizecb) {
+  int rc = TrieMapNode_Delete(t->root, str, len, freecb, sizecb, &(t->memsize));
   t->size -= rc;
   int deleted = rc ? 1 : 0;
   t->cardinality -= deleted;
@@ -528,16 +539,18 @@ size_t TrieMap_MemUsage(TrieMap *t) {
                     sizeof(char *));         // == 8, string size rounded up to 8 bits due to padding
 }
 
-void TrieMapNode_Free(TrieMapNode *n, freeCB func, size_t *memSize) {
+void TrieMapNode_Free(TrieMapNode *n, freeCB freecb, sizeofCB sizecb,
+                                size_t *memSize) {
   for (tm_len_t i = 0; i < n->numChildren; i++) {
     TrieMapNode *child = __trieMapNode_children(n)[i];
-    TrieMapNode_Free(child, func, memSize);
+    TrieMapNode_Free(child, freecb, sizecb, memSize);
   }
+  
   if (n->value) {
-    // TODO: substract the freed size from memsize
-    //memSize -= freeSize(); ???
-    if (func) {
-      func(n->value);
+    *memSize -= sizecb ? sizecb(n->value) : sizeof(n->value);
+    
+    if (freecb) {
+      freecb(n->value);
     } else {
       rm_free(n->value);
     }
@@ -1145,10 +1158,9 @@ int TrieMapIterator_NextWildcard(TrieMapIterator *it, char **ptr, tm_len_t *len,
   return 0;
 }
 
-void TrieMap_Free(TrieMap *t, freeCB func) {
+void TrieMap_Free(TrieMap *t, freeCB freecb) {
   if (t) {
-    size_t dummySize;
-    TrieMapNode_Free(t->root, func, &dummySize);
+    TrieMapNode_Free(t->root, freecb, NULL, &(t->memsize));
     rm_free(t);
   }
 }

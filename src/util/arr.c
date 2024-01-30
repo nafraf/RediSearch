@@ -11,3 +11,7 @@ void array_debug(void *pp) {
   printf("Array: %p, hdr@%p", pp, hdr);
   printf("Len: %u. Cap: %u. ElemSize: %u\n", hdr->len, hdr->cap, hdr->elem_sz);
 }
+
+size_t array_memsize(array_t arr) {
+  return arr ? array_sizeof(array_hdr(arr)) : 0;
+}
