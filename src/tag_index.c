@@ -130,14 +130,14 @@ int TagIndex_Preprocess(char sep, TagFieldFlags flags, const DocumentField *data
 
 struct InvertedIndex *TagIndex_OpenIndex(TagIndex *idx, const char *value,
                                           size_t len, int create, size_t *sz) {
-  *sz = 0;
+  *sz;
   InvertedIndex *iv = TrieMap_Find(idx->values, (char *)value, len);
   if (iv == TRIEMAP_NOTFOUND) {
     if (create) {
       iv = NewInvertedIndex(Index_DocIdsOnly, 1, sz);
-      size_t memSize_before_add = idx->values->memsize;
+      // size_t memSize_before_add = idx->values->memsize;
       TrieMap_Add(idx->values, (char *)value, len, iv, NULL, NULL);
-      *(sz) += (idx->values->memsize - memSize_before_add);
+      // *(sz) += (idx->values->memsize - memSize_before_add);
     }
   }
   return iv;
@@ -163,7 +163,7 @@ size_t TagIndex_Index(TagIndex *idx, const char **values, size_t n, t_docId docI
     if (tok && *tok != '\0') {
       ret += tagIndex_Put(idx, tok, strlen(tok), docId);
       if (idx->suffix) { // add to suffix triemap if exist
-        addSuffixTrieMap(idx->suffix, tok, strlen(tok));
+        ret += addSuffixTrieMap(idx->suffix, tok, strlen(tok));
       }
     }
   }
@@ -368,13 +368,13 @@ size_t TagIndex_MemUsage(const void *value) {
 
   TrieMapIterator *it = TrieMap_Iterate(idx->values, "", 0);
   while (TrieMapIterator_Next(it, &str, &slen, &ptr)) {
-    sz += slen + InvertedIndex_MemUsage((InvertedIndex *)ptr);
+    sz += InvertedIndex_MemUsage((InvertedIndex *)ptr);
   }
   TrieMapIterator_Free(it);
 
   it = TrieMap_Iterate(idx->suffix, "", 0);
   while (TrieMapIterator_Next(it, &str, &slen, &ptr)) {
-    sz += slen + InvertedIndex_MemUsage((InvertedIndex *)ptr);
+    sz += InvertedIndex_MemUsage((InvertedIndex *)ptr);
   }
   TrieMapIterator_Free(it);
 
