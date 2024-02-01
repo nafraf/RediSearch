@@ -533,10 +533,11 @@ int TrieMap_Delete(TrieMap *t, const char *str, tm_len_t len, freeCB freecb, siz
 }
 
 size_t TrieMap_MemUsage(TrieMap *t) {
-  return t->size * (sizeof(TrieMapNode) +    // size of struct
-                    sizeof(TrieMapNode *) +  // size of ptr to struct in parent node
-                    1 +                      // char key to children in parent node
-                    sizeof(char *));         // == 8, string size rounded up to 8 bits due to padding
+  // return t->size * (sizeof(TrieMapNode) +    // size of struct
+  //                   sizeof(TrieMapNode *) +  // size of ptr to struct in parent node
+  //                   1 +                      // char key to children in parent node
+  //                   sizeof(char *));         // == 8, string size rounded up to 8 bits due to padding
+  return t->memsize;
 }
 
 void TrieMapNode_Free(TrieMapNode *n, freeCB freecb, sizeofCB sizecb,
