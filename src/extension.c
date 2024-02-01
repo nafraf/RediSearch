@@ -39,11 +39,11 @@ static void freeScorerCb(void *p) {
 
 void Extensions_Free() {
   if (queryExpanders_g) {
-    TrieMap_Free(queryExpanders_g, freeExpanderCb);
+    TrieMap_Free(queryExpanders_g, (freeCB)freeExpanderCb);
     queryExpanders_g = NULL;
   }
   if (scorers_g) {
-    TrieMap_Free(scorers_g, freeScorerCb);
+    TrieMap_Free(scorers_g, (freeCB)freeScorerCb);
     scorers_g = NULL;
   }
 }

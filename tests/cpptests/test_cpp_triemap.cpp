@@ -37,7 +37,9 @@ int testTMNumResults(TrieMap *t, const char *str, tm_iter_mode mode) {
   return numRes;
 }
 
-void freeCb(void *val) {}
+size_t freeCb(void *val) {
+  return 0;
+}
 
 TEST_F(TrieMapTest, testPrefix) {
   TrieMap *t = loadTrieMap();
@@ -78,7 +80,9 @@ void checkNext(TrieMapIterator *iter, const char *str) {
   ASSERT_FALSE(strncmp(outstr, str, strlen(str)));
 }
 
-void testFreeCB(void *val) {}
+size_t testFreeCB(void *val) {
+  return 0;
+}
 
 TEST_F(TrieMapTest, testLexOrder) {
   TrieMap *t = loadTrieMap();
@@ -96,10 +100,10 @@ TEST_F(TrieMapTest, testLexOrder) {
   checkNext(iter, "towel");
   TrieMapIterator_Free(iter);
 
-  TrieMap_Delete(t, "hello world", 11, testFreeCB, NULL);
-  TrieMap_Delete(t, "dealer", 6, testFreeCB, NULL);
-  TrieMap_Delete(t, "help", 4, testFreeCB, NULL);
-  TrieMap_Delete(t, "her", 3, testFreeCB, NULL);
+  TrieMap_Delete(t, "hello world", 11, testFreeCB);
+  TrieMap_Delete(t, "dealer", 6, testFreeCB);
+  TrieMap_Delete(t, "help", 4, testFreeCB);
+  TrieMap_Delete(t, "her", 3, testFreeCB);
 
   iter = TrieMap_Iterate(t, "", 0);
   checkNext(iter, "bell");

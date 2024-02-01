@@ -1062,16 +1062,15 @@ static FGCError FGC_parentHandleTags(ForkGC *gc) {
 
     // if tag value is empty, let's remove it.
     if (idx->numDocs == 0) {
+      // TODO: Nafraf - Is this correct?
       info.nbytesCollected += sizeof_InvertedIndex(idx->flags);
       size_t before_delete = tagIdx->values->memsize;
-      // TODO: define sizeofFunc
-      // TrieMap_Delete(tagIdx->values, tagVal, tagValLen, InvertedIndex_Free,
-      //                 (sizeofCB)InvertedIndex_MemUsage);
-      TrieMap_Delete(tagIdx->values, tagVal, tagValLen, InvertedIndex_Free,
-                      NULL);
+      // TODO: Nafraf - invertedIndex_freeCallback updates tagIdx->values->memsize
+      TrieMap_Delete(tagIdx->values, tagVal, tagValLen, invertedIndex_freeCallback);
       info.nbytesCollected += before_delete - tagIdx->values->memsize;
 
       if (tagIdx->suffix) {
+        // TODO: Nafraf - deleteSuffixTrieMap should update tagIdx->suffix->memsize
         deleteSuffixTrieMap(tagIdx->suffix, tagVal, tagValLen);
       }
     }

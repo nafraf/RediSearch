@@ -47,9 +47,9 @@ void testTrie() {
   for (int i = 0; i < 100; i++) {
     sprintf(buf, "key%d", i);
 
-    int rc = TrieMap_Delete(tm, buf, strlen(buf), NULL, NULL);
+    int rc = TrieMap_Delete(tm, buf, strlen(buf), NULL);
     mu_check(rc);
-    rc = TrieMap_Delete(tm, buf, strlen(buf), NULL, NULL);
+    rc = TrieMap_Delete(tm, buf, strlen(buf), NULL);
     mu_check(rc == 0);
     mu_check(tm->cardinality == 100 - i - 1);
   }

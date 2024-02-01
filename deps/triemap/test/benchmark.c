@@ -99,7 +99,7 @@ void populate(int N) {
     formatKey((char *)buf, i);
 
     TimeSampler_StartSection(&ts);
-    TrieMap_Delete(tm, buf, strlen((char *)buf), NULL, NULL);
+    TrieMap_Delete(tm, buf, strlen((char *)buf), NULL);
     TimeSampler_EndSection(&ts);
     TimeSampler_Tick(&ts);
 

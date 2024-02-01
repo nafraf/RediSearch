@@ -76,14 +76,21 @@ size_t indexBlock_Free(IndexBlock *blk) {
   return Buffer_Free(&blk->buf);
 }
 
-void InvertedIndex_Free(void *ctx) {
+size_t invertedIndex_freeCallback(void *ctx) {
+  size_t size = 0;
   InvertedIndex *idx = ctx;
   TotalIIBlocks -= idx->size;
   for (uint32_t i = 0; i < idx->size; i++) {
-    indexBlock_Free(&idx->blocks[i]);
+    size += indexBlock_Free(&idx->blocks[i]);
   }
   rm_free(idx->blocks);
   rm_free(idx);
+  size += sizeof(idx->blocks) + sizeof(idx);
+  return size;
+}
+
+void InvertedIndex_Free(void *idx) {
+  invertedIndex_freeCallback(idx);
 }
 
 static void IR_SetAtEnd(IndexReader *r, int value) {

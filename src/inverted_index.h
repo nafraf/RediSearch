@@ -106,6 +106,8 @@ InvertedIndex *NewInvertedIndex(IndexFlags flags, int initBlock, size_t *memsize
 */
 IndexBlock *InvertedIndex_AddBlock(InvertedIndex *idx, t_docId firstId, size_t *memsize);
 size_t indexBlock_Free(IndexBlock *blk);
+
+size_t invertedIndex_freeCallback(void *ctx);
 void InvertedIndex_Free(void *idx);
 
 #define IndexBlock_DataBuf(b) (b)->buf.data

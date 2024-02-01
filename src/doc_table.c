@@ -654,17 +654,18 @@ size_t DocIdMap_Put(DocIdMap *m, const char *s, size_t n, t_docId docId) {
 
   t_docId *pd = rm_malloc(sizeof(t_docId));
   *pd = docId;
-  // TODO: define sizeofFunc?
-  // TODO: should I count m->tm->memsize?
+  // TODO: Nafraf - define sizeofFunc?
+  // TODO: Nafraf - should I count m->tm->memsize?
   TrieMap_Add(m->tm, (char *)s, n, pd, _docIdMap_replace, NULL);
   return sizeof(t_docId);
 }
 
 void DocIdMap_Free(DocIdMap *m) {
-  TrieMap_Free(m->tm, rm_free);
+  // TODO: Nafraf - should we count the free memory here?
+  TrieMap_Free(m->tm, (freeCB)rm_free);
 }
 
 int DocIdMap_Delete(DocIdMap *m, const char *s, size_t n) {
-  // TODO: define sizeofFunc?
-  return TrieMap_Delete(m->tm, (char *)s, n, rm_free, NULL);
+  // TODO: Nafraf - should we count the free memory here?
+  return TrieMap_Delete(m->tm, (char *)s, n, (freeCB)rm_free);
 }

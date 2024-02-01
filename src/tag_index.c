@@ -353,7 +353,7 @@ void TagIndex_RdbSave(RedisModuleIO *rdb, void *value) {
 
 void TagIndex_Free(void *p) {
   TagIndex *idx = p;
-  TrieMap_Free(idx->values, InvertedIndex_Free);
+  TrieMap_Free(idx->values, invertedIndex_freeCallback);
   TrieMap_Free(idx->suffix, suffixTrieMap_freeCallback);
   rm_free(idx);
 }

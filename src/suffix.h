@@ -56,7 +56,7 @@ int Suffix_IterateWildcard(SuffixCtx *sufCtx);
 size_t addSuffixTrieMap(TrieMap *trie, const char *str, uint32_t len);
 void deleteSuffixTrieMap(TrieMap *trie, const char *str, uint32_t len);
 
-void suffixTrieMap_freeCallback(void *payload);
+size_t suffixTrieMap_freeCallback(void *payload);
 
 /* Return a list of list of terms which match the suffix or contains term */
 arrayof(char**) GetList_SuffixTrieMap(TrieMap *trie, const char *str, uint32_t len,

@@ -383,11 +383,8 @@ size_t addSuffixTrieMap(TrieMap *trie, const char *str, uint32_t len) {
     data = rm_calloc(1, sizeof(*data));
     data->term = copyStr;
     data->array = array_ensure_append_1(data->array, copyStr);
-    sz = sizeof(*data);
-    size_t initialTrieMapMemSize = trie->memsize;
+    // TODO: Nafraf - Is this correct? Should we add the size of the data?
     TrieMap_Add(trie, copyStr, len, data, NULL, NULL);
-    size_t newTrieMapMemSize = trie->memsize;
-    sz += newTrieMapMemSize - initialTrieMapMemSize;
   } else {    // node exists as suffix for other term
     RS_LOG_ASSERT(!data->term, "can't reach here");
     data->term = copyStr;
@@ -402,11 +399,8 @@ size_t addSuffixTrieMap(TrieMap *trie, const char *str, uint32_t len) {
     if (data == TRIEMAP_NOTFOUND) {
       data = rm_calloc(1, sizeof(*data));
       data->array = array_ensure_append_1(data->array, copyStr);
-      sz = sizeof(*data);
-      size_t initialTrieMapMemSize = trie->memsize;
+      // TODO: Nafraf - Is this correct? Should we add the size of the data?
       TrieMap_Add(trie, copyStr + j, len - j, data, NULL, NULL);
-      size_t newTrieMapMemSize = trie->memsize;
-      sz += newTrieMapMemSize - initialTrieMapMemSize;
     } else {
       data->array = array_ensure_append_1(data->array, copyStr);
     }
@@ -435,8 +429,8 @@ void deleteSuffixTrieMap(TrieMap *trie, const char *str, uint32_t len) {
     // if array is empty, remove the node
     if (array_len(data->array) == 0) {
       RS_LOG_ASSERT(!data->term, "array should contain a pointer to the string");
-      TrieMap_Delete(trie, str + j, len - j, (freeCB)freeSuffixNode,
-                      (sizeofCB)sizeofSuffixNode);
+      // TODO: Nafraf - freeSuffixNode should return the size of freed memory
+      TrieMap_Delete(trie, str + j, len - j, (freeCB)freeSuffixNode);
     }
   }
   rm_free(oldTerm);
@@ -532,7 +526,9 @@ arrayof(char*) GetList_SuffixTrieMap_Wildcard(TrieMap *trie, const char *pattern
   return arr;
 }
 
-void suffixTrieMap_freeCallback(void *payload) {
+size_t suffixTrieMap_freeCallback(void *payload) {
   suffixTrie_freeCallback(payload);
-  rm_free(payload);  
+  rm_free(payload);
+  // TODO: Nafraf - Return the size of freed memory
+  return 0;
 }

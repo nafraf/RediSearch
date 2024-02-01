@@ -525,7 +525,7 @@ static void freePrefixNode(void *ctx) {
 }
 
 void SchemaPrefixes_Free(TrieMap *t) {
-  TrieMap_Free(t, freePrefixNode);
+  TrieMap_Free(t, (freeCB)freePrefixNode);
 }
 
 void SchemaPrefixes_Add(const char *prefix, StrongRef ref) {
@@ -558,7 +558,7 @@ void SchemaPrefixes_RemoveSpec(StrongRef ref) {
         if (array_len(node->index_specs) == 0) {
           // if all specs were deleted, remove the node
           TrieMap_Delete(SchemaPrefixes_g, prefixes[i], strlen(prefixes[i]),
-            (freeCB)SchemaPrefixNode_Free, (sizeofCB)SchemaPrefixNode_SizeOf);
+            (freeCB)SchemaPrefixNode_Free);
         }
         break;
       }
