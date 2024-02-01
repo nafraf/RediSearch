@@ -362,15 +362,22 @@ size_t TagIndex_MemUsage(const void *value) {
   const TagIndex *idx = value;
   size_t sz = sizeof(*idx);
 
-  TrieMapIterator *it = TrieMap_Iterate(idx->values, "", 0);
-
   char *str;
   tm_len_t slen;
   void *ptr;
+
+  TrieMapIterator *it = TrieMap_Iterate(idx->values, "", 0);
   while (TrieMapIterator_Next(it, &str, &slen, &ptr)) {
     sz += slen + InvertedIndex_MemUsage((InvertedIndex *)ptr);
   }
   TrieMapIterator_Free(it);
+
+  it = TrieMap_Iterate(idx->suffix, "", 0);
+  while (TrieMapIterator_Next(it, &str, &slen, &ptr)) {
+    sz += slen + InvertedIndex_MemUsage((InvertedIndex *)ptr);
+  }
+  TrieMapIterator_Free(it);
+
   return sz;
 }
 
