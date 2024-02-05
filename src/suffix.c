@@ -37,16 +37,20 @@ static suffixData createSuffixNode(char *term, int keepPtr) {
   return node;
 }
 
-static void freeSuffixNode(suffixData *node) {
+size_t sizeofSuffixNode(void *ptr) {
+  suffixData *node = ptr;
+  size_t size = sizeof(node);
+  size += node->term ? strlen(node->term) : 0;
+  size += array_memsize(node->array);
+  return size;
+}
+
+size_t freeSuffixNode(void *ptr) {
+  suffixData *node = ptr;
+  size_t size = sizeofSuffixNode(node);
   array_free(node->array);
   rm_free(node->term);
   rm_free(node);
-}
-
-size_t sizeofSuffixNode(suffixData *node) {
-  size_t size = sizeof(*node);
-  size += node->term ? strlen(node->term) : 0;
-  size += array_memsize(node->array);
   return size;
 }
 
@@ -132,6 +136,7 @@ void deleteSuffixTrie(Trie *trie, const char *str, uint32_t len) {
       oldTerm = data->term;
       data->term = NULL;
     }
+    // TODO: Nafraf - check if the removeSuffix should return the size of the removed element
     // remove from array
     removeSuffix(str, len, data->array);
     // if array is empty, remove the node
@@ -355,12 +360,14 @@ int Suffix_IterateWildcard(SuffixCtx *sufCtx) {
   return 1;
 }
 
-void suffixTrie_freeCallback(void *payload) {
+size_t suffixTrie_freeCallback(void *payload) {
   suffixData *data = payload;
+  size_t size = array_memsize(data->array) + (data->term ? strlen(data->term) : 0);
   array_free(data->array);
   data->array = NULL;
   rm_free(data->term);
   data->term = NULL;
+  return size;
 }
 
 
@@ -383,8 +390,8 @@ size_t addSuffixTrieMap(TrieMap *trie, const char *str, uint32_t len) {
     data = rm_calloc(1, sizeof(*data));
     data->term = copyStr;
     data->array = array_ensure_append_1(data->array, copyStr);
-    // TODO: Nafraf - Is this correct? Should we add the size of the data?
-    TrieMap_Add(trie, copyStr, len, data, NULL, NULL);
+    // TODO: Nafraf - Is this correct? Should we add the size of the data (value)?
+    TrieMap_Add(trie, copyStr, len, data, NULL, sizeofSuffixNode);
   } else {    // node exists as suffix for other term
     RS_LOG_ASSERT(!data->term, "can't reach here");
     data->term = copyStr;
@@ -400,7 +407,8 @@ size_t addSuffixTrieMap(TrieMap *trie, const char *str, uint32_t len) {
       data = rm_calloc(1, sizeof(*data));
       data->array = array_ensure_append_1(data->array, copyStr);
       // TODO: Nafraf - Is this correct? Should we add the size of the data?
-      TrieMap_Add(trie, copyStr + j, len - j, data, NULL, NULL);
+      // TODO: Nafraf - Is this correct? Should we define TrieMapReplaceFunc?
+      TrieMap_Add(trie, copyStr + j, len - j, data, NULL, sizeofSuffixNode);
     } else {
       data->array = array_ensure_append_1(data->array, copyStr);
     }
@@ -424,13 +432,13 @@ void deleteSuffixTrieMap(TrieMap *trie, const char *str, uint32_t len) {
       oldTerm = data->term;
       data->term = NULL;
     }
+    // TODO: Nafraf - check if the removeSuffix should return the size of the removed element
     // remove from array
     removeSuffix(str, len, data->array);
     // if array is empty, remove the node
     if (array_len(data->array) == 0) {
       RS_LOG_ASSERT(!data->term, "array should contain a pointer to the string");
-      // TODO: Nafraf - freeSuffixNode should return the size of freed memory
-      TrieMap_Delete(trie, str + j, len - j, (freeCB)freeSuffixNode);
+      TrieMap_Delete(trie, str + j, len - j, freeSuffixNode);
     }
   }
   rm_free(oldTerm);
@@ -527,8 +535,8 @@ arrayof(char*) GetList_SuffixTrieMap_Wildcard(TrieMap *trie, const char *pattern
 }
 
 size_t suffixTrieMap_freeCallback(void *payload) {
-  suffixTrie_freeCallback(payload);
+  size_t size = suffixTrie_freeCallback(payload);
+  size += sizeof(payload);
   rm_free(payload);
-  // TODO: Nafraf - Return the size of freed memory
-  return 0;
+  return size;
 }

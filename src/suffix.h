@@ -40,7 +40,7 @@ typedef struct SuffixCtx {
 void addSuffixTrie(Trie *trie, const char *str, uint32_t len);
 void deleteSuffixTrie(Trie *trie, const char *str, uint32_t len);
 
-void suffixTrie_freeCallback(void *data);
+size_t suffixTrie_freeCallback(void *data);
 
 /* Iterate on suffix trie and add use callback function on results */
 void Suffix_IterateContains(SuffixCtx *sufCtx);

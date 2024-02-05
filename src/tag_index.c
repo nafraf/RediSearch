@@ -130,14 +130,12 @@ int TagIndex_Preprocess(char sep, TagFieldFlags flags, const DocumentField *data
 
 struct InvertedIndex *TagIndex_OpenIndex(TagIndex *idx, const char *value,
                                           size_t len, int create, size_t *sz) {
-  *sz;
   InvertedIndex *iv = TrieMap_Find(idx->values, (char *)value, len);
   if (iv == TRIEMAP_NOTFOUND) {
     if (create) {
       iv = NewInvertedIndex(Index_DocIdsOnly, 1, sz);
-      // size_t memSize_before_add = idx->values->memsize;
+      // TODO: Nafraf - we are not adding the size of the triemap, check how to report it
       TrieMap_Add(idx->values, (char *)value, len, iv, NULL, NULL);
-      // *(sz) += (idx->values->memsize - memSize_before_add);
     }
   }
   return iv;
@@ -185,11 +183,11 @@ static void TagReader_OnReopen(void *privdata) {
   for (size_t ii = 0; ii < nits; ++ii) {
     IndexReader *ir = its[ii]->ctx;
     if (ir->record->type == RSResultType_Term) {
-      size_t sz;
+      size_t dummy_size;
       // we need to reopen the inverted index to make sure its still valid.
       // the GC might have deleted it by now.
       InvertedIndex *idx = TagIndex_OpenIndex(ctx->idx, ir->record->term.term->str,
-                                              ir->record->term.term->len, 0, &sz);
+                                              ir->record->term.term->len, 0, &dummy_size);
       if (idx == TRIEMAP_NOTFOUND || ir->idx != idx) {
         // the inverted index was collected entirely by GC, lets stop searching.
         // notice, it might be that a new inverted index was created, we will not

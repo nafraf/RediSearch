@@ -781,6 +781,7 @@ FIELD_BULK_INDEXER(tagIndexer) {
     }
   }
 
+  // TODO: Nafraf - Correct this: TagIndex is returning more than the inverted index size.
   ctx->spec->stats.invertedSize +=
       TagIndex_Index(tidx, (const char **)fdata->tags, array_len(fdata->tags), aCtx->doc->docId);
   ctx->spec->stats.numRecords++;

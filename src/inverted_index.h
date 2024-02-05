@@ -89,10 +89,6 @@ static inline size_t sizeof_InvertedIndex(IndexFlags flags) {
                                                   sizeof(InvertedIndex) - sizeof(t_fieldMask);
 }
 
-static inline size_t sizeofInvertedIndex(const InvertedIndex *idx) {
-  return sizeof_InvertedIndex(idx->flags);
-}
-
 // Create a new inverted index object, with the given flag.
 // If initBlock is 1, we create the first block.
 // in/out memsize must be not NULL, the total of allocated memory 

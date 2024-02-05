@@ -46,6 +46,7 @@ typedef enum {
 static void FGC_updateStats(ForkGC *gc, RedisSearchCtx *sctx,
             size_t recordsRemoved, size_t bytesCollected, size_t bytesAdded) {
   sctx->spec->stats.numRecords -= recordsRemoved;
+  RS_LOG_ASSERT(sctx->spec->stats.invertedSize + bytesAdded >= bytesCollected, "bytesCollected is larger than invertedSize");
   sctx->spec->stats.invertedSize += bytesAdded - bytesCollected;
   gc->stats.totalCollected += bytesCollected;
 }
@@ -769,7 +770,9 @@ static FGCError FGC_parentHandleTerms(ForkGC *gc) {
   FGC_applyInvertedIndex(gc, &idxbufs, &info, idx);
 
   if (idx->numDocs == 0) {
-    info.nbytesCollected += sizeof_InvertedIndex(idx->flags);
+    // TODO: Nafraf - Check if sizeof_InvertedIndex is the right size to add to nbytesCollected
+    // info.nbytesCollected += sizeof_InvertedIndex(idx->flags);
+    info.nbytesAdded += InvertedIndex_MemUsage(idx);
 
     // inverted index was cleaned entirely lets free it
     RedisModuleString *termKey = fmtRedisTermKey(sctx, term, len);
@@ -1063,18 +1066,19 @@ static FGCError FGC_parentHandleTags(ForkGC *gc) {
     // if tag value is empty, let's remove it.
     if (idx->numDocs == 0) {
       // TODO: Nafraf - Is this correct?
-      info.nbytesCollected += sizeof_InvertedIndex(idx->flags);
-      size_t before_delete = tagIdx->values->memsize;
-      // TODO: Nafraf - invertedIndex_freeCallback updates tagIdx->values->memsize
-      TrieMap_Delete(tagIdx->values, tagVal, tagValLen, invertedIndex_freeCallback);
-      info.nbytesCollected += before_delete - tagIdx->values->memsize;
+      // TODO: Nafraf - Check if sizeof_InvertedIndex is the right size to add to nbytesCollected
+      // info.nbytesCollected += sizeof_InvertedIndex(idx->flags);
+      info.nbytesCollected += InvertedIndex_MemUsage(idx);
+      // TODO: Nafraf - InvertedIndex memory is counted separately from TrieMap memory,
+      // then we should not count it here.
+      // TrieMap_Delete(tagIdx->values, tagVal, tagValLen, invertedIndex_freeCallback);
+      TrieMap_Delete(tagIdx->values, tagVal, tagValLen, NULL);
 
       if (tagIdx->suffix) {
-        // TODO: Nafraf - deleteSuffixTrieMap should update tagIdx->suffix->memsize
         deleteSuffixTrieMap(tagIdx->suffix, tagVal, tagValLen);
       }
     }
-
+    // TODO: Nafraf - Check if this is correct, we could be substracting from inverted index without adding to the total
     FGC_updateStats(gc, sctx, info.nentriesCollected, info.nbytesCollected, info.nbytesAdded);
 
   loop_cleanup:

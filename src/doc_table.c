@@ -38,8 +38,11 @@ DocTable NewDocTable(size_t cap, size_t max_size) {
       .maxSize = max_size,
       .dim = NewDocIdMap(),
   };
-  size_t newTrieMapMemSize = ret.dim.tm->memsize;
-  ret.memsize += newTrieMapMemSize;
+  // TODO: Nafraf - Add comments
+  // Don't count it here, because it is reported separately:
+  // See info_command.c: REPLY_KVNUM("key_table_size_mb", TrieMap_MemUsage(sp->docs.dim.tm) / (1024 * 1024));
+  // size_t newTrieMapMemSize = ret.dim.tm->memsize;
+  // ret.memsize += newTrieMapMemSize;
   ret.buckets = rm_calloc(cap, sizeof(*ret.buckets));
   ret.memsize += (cap * sizeof(*ret.buckets));
   return ret;
@@ -161,8 +164,8 @@ int DocTable_SetPayload(DocTable *t, RSDocumentMetadata *dmd, const char *data, 
     /* Free the old payload */
     if (dmd->payload->data) {
       rm_free((void *)dmd->payload->data);
+      t->memsize -= dmd->payload->len;
     }
-    t->memsize -= dmd->payload->len;
   } else {
     dmd->payload = rm_malloc(sizeof(RSPayload));
     t->memsize += sizeof(RSPayload);
@@ -388,8 +391,10 @@ int DocTable_Replace(DocTable *t, const char *from_str, size_t from_len, const c
   DocIdMap_Delete(&t->dim, from_str, from_len);
   t->memsize += DocIdMap_Put(&t->dim, to_str, to_len, id);
   RSDocumentMetadata *dmd = DocTable_GetOwn(t, id);
+  t->memsize -= sdsAllocSize(dmd->keyPtr);
   sdsfree(dmd->keyPtr);
   dmd->keyPtr = sdsnewlen(to_str, to_len);
+  t->memsize += sdsAllocSize(dmd->keyPtr);
   return REDISMODULE_OK;
 }
 
@@ -644,7 +649,6 @@ t_docId DocIdMap_Get(const DocIdMap *m, const char *s, size_t n) {
 
 void *_docIdMap_replace(void *oldval, void *newval) {
   if (oldval) {
-    printf("Nafraf: sizeof(odlval): %zu\n", sizeof(oldval));
     rm_free(oldval);
   }
   return newval;

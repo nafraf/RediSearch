@@ -33,7 +33,7 @@ typedef enum {
   Trie_Sort_Score = 1,
 } TrieSortMode;
 
-typedef void (*TrieFreeCallback)(void *node);
+typedef size_t (*TrieFreeCallback)(void *node);
 struct timespec;
 
 #pragma pack(1)

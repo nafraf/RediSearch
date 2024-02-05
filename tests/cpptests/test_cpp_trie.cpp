@@ -227,9 +227,11 @@ TEST_F(TrieTest, testPayload) {
 /**
  * This test check free callback.
  */
-void trieFreeCb(void *val) {
+size_t trieFreeCb(void *val) {
   char **str = (char **)val;
+  size_t len = strlen(*str);
   rm_free(*str);
+  return len;
 }
 
 TEST_F(TrieTest, testFreeCallback) {

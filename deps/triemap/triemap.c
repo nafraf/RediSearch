@@ -161,7 +161,8 @@ int TrieMapNode_Add(TrieMapNode **np, char *str, tm_len_t len, void *value,
     int deleted = __trieMapNode_isDeleted(n);
 
     if (cb) {
-      // TODO: substract the freed size from memsize or do it in the callback?
+      // TODO: Nafraf - substract the freed size from memsize or do it in the callback?
+      // TODO: Nafraf - check if the size of value should be counted separately
       if(n->value) {
         *memSize -= sizecb ? sizecb(n->value) : sizeof(n->value);
       }
