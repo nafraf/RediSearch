@@ -500,53 +500,53 @@ def testAutoescaping2(env):
     # Set default dialect to 4 because it supports the autoescaping
     env.expect("FT.CONFIG SET DEFAULT_DIALECT 4").ok()
 
-    # Test tag with '@'
+    # Test text with '@'
     res = env.cmd('FT.SEARCH', 'idx', '@txt:(abc 1)', 'NOCONTENT',
                   'SORTBY', 'id', 'ASC')
-    expected_result = [2, 'tag:1', 'tag:11']
+    expected_result = [2, 'txt:1', 'txt:11']
     env.assertEqual(expected_result, res)
 
     res = env.cmd('FT.SEARCH', 'idx', '@txt:(12345)', 'NOCONTENT',
                   'SORTBY', 'id', 'ASC')
-    expected_result = [1, 'tag:8']
+    expected_result = [1, 'txt:8']
     env.assertEqual(expected_result, res)
 
-    # Test tag with ':'
+    # Test text with ':'
     res = env.cmd('FT.SEARCH', 'idx', '@txt:(xyz 2)', 'NOCONTENT',
                   'SORTBY', 'id', 'ASC')
-    expected_result = [2, 'tag:2', 'tag:11']
+    expected_result = [2, 'txt:2', 'txt:11']
     env.assertEqual(expected_result, res)
 
     res = env.cmd('FT.SEARCH', 'idx', '@txt:(abcde)', 'NOCONTENT',
                   'SORTBY', 'id', 'ASC')
-    expected_result = [1, 'tag:7']
+    expected_result = [3, 'txt:5', 'txt:6', 'txt:7']
     env.assertEqual(expected_result, res)
 
-    # Test tag with '-'
+    # Test text with '-'
     res = env.cmd('FT.SEARCH', 'idx', '@txt:(123 4)', 'NOCONTENT',
                   'SORTBY', 'id', 'ASC')
-    expected_result = [1, 'tag:3']
+    expected_result = [1, 'txt:3']
     env.assertEqual(expected_result, res)
 
     res = env.cmd('FT.SEARCH', 'idx', '@txt:(99999)', 'NOCONTENT',
                   'SORTBY', 'id', 'ASC')
-    expected_result = [1, 'tag:9']
+    expected_result = [1, 'txt:9']
     env.assertEqual(expected_result, res)
 
-    # Test tag with brackets
+    # Test text with brackets
     res = env.cmd('FT.SEARCH', 'idx', '@txt:(ab{12\\})', 'NOCONTENT')
-    expected_result = [1, 'tag:10']
+    expected_result = [1, 'txt:10']
     env.assertEqual(expected_result, res)
 
-    # Test tag with '|' and ' '
+    # Test text with '|' and ' '
     res = env.cmd('FT.SEARCH', 'idx', '@txt:(a\\|b-c\\ d)', 'NOCONTENT')
-    expected_result = [1, 'tag:13']
+    expected_result = [1, 'txt:13']
     env.assertEqual(expected_result, res)
 
-    # Backward compatibility UNION - tags without separators
+    # Backward compatibility UNION - texts without separators
     res = env.cmd('FT.SEARCH', 'idx', '@txt:(abcde|01234)', 'NOCONTENT',
                   'SORTBY', 'id', 'ASC')
-    expected_result = [3, 'tag:4', 'tag:5', 'tag:6']
+    expected_result = [3, 'txt:4', 'txt:5', 'txt:6']
     env.assertEqual(expected_result, res)
 
     res = env.cmd('FT.SEARCH', 'idx', '@txt:(abcde  |  01234)', 'NOCONTENT',
@@ -555,39 +555,39 @@ def testAutoescaping2(env):
 
     # TODO:
     # Bug in version 2.8.4? This does not return results
-    # Backward compatibility INTERSECT - tags without separators
+    # Backward compatibility INTERSECT - texts without separators
     # res = env.cmd('FT.SEARCH', 'idx', '@txt:(abcde,01234)', 'NOCONTENT',
     #               'SORTBY', 'id', 'ASC')
-    # expected_result = [1, 'tag:6']
+    # expected_result = [1, 'txt:6']
     # env.assertEqual(expected_result, res)
 
     # res = env.cmd('FT.SEARCH', 'idx', '@txt:(abcde 01234)', 'NOCONTENT',
     #               'SORTBY', 'id', 'ASC')
     # env.assertEqual(expected_result, res)
 
-    # If tags contain separators, the operators are not supported
+    # If the text contain separators, the operators are not supported
     env.expect('FT.SEARCH', 'idx', '@txt:(ab@cde|01234}').error()
     env.expect('FT.SEARCH', 'idx', '@txt:(ab@cde 01234}').error()
     env.expect('FT.SEARCH', 'idx', '@txt:(ab@cde,01234}').error()
 
     # AND Operator (INTERSECT queries)
     res = env.cmd('FT.SEARCH', 'idx', '@txt:(xyz:2} @txt:(abc@1)', 'NOCONTENT')
-    expected_result = [1, 'tag:11']
+    expected_result = [1, 'txt:11']
     env.assertEqual(expected_result, res)
 
     # Negation Queries (using dash "-")
     res = env.cmd('FT.SEARCH', 'idx', '@txt:(abc@1} -@txt:(xyz:2)', 'NOCONTENT')
-    expected_result = [1, 'tag:1']
+    expected_result = [1, 'txt:1']
     env.assertEqual(expected_result, res)
 
     # OR Operator (UNION queries)
     res = env.cmd('FT.SEARCH', 'idx', '@txt:(123-4} | @txt:(you@srv.com)',
                   'NOCONTENT', 'SORTBY', 'id', 'ASC')
-    expected_result = [2, 'tag:3', 'tag:12']
+    expected_result = [2, 'txt:3', 'txt:12']
     env.assertEqual(expected_result, res)
 
     # Optional Queries (using tiled "~")
     res = env.cmd('FT.SEARCH', 'idx', '@txt:(abc@1} ~@txt:(xyz:2)',
                   'NOCONTENT', 'SORTBY', 'id', 'ASC')
-    expected_result = [2, 'tag:1', 'tag:11']
+    expected_result = [2, 'txt:1', 'txt:11']
     env.assertEqual(expected_result, res)
