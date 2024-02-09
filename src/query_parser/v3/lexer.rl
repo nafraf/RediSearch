@@ -53,13 +53,13 @@ squote = "'";
 escaped_character = escape (punct | space | escape);
 escaped_term = (((any - (punct | cntrl | space | escape)) | escaped_character) | '_')+ $0;
 
-# valid_punct characters are equal to the separators except: rb and escape
-valid_punct = ( '!' | '"' | '#' | '$' | '%' | '&' | squote | '(' | ')' | '*' | '+' | '-' | '.' | '/' | ':' | ';' | '<' | '=' | '>' | '?' | '@' | '[' | ']' | '^' | '`' | '{' | '}' | '~' | '|' | ',' );
+# valid_punct characters are equal to the separators except: rb, star, and escape
+valid_punct = ( '!' | '"' | '#' | '$' | '%' | '&' | squote | '(' | ')' | '+' | '-' | '.' | '/' | ':' | ';' | '<' | '=' | '>' | '?' | '@' | '[' | ']' | '^' | '`' | '{' | '}' | '~' | '|' | ',' );
 invalid_punct = punct - valid_punct;
 
 mod = '@'.escaped_term $ 1;
 attr = '$'.escaped_term $ 1;
-single_tag = ( (any - ( invalid_punct | escape | rb ) ) | (escape (escape | rb )) | '_' )+;
+single_tag = ( (any - ( invalid_punct | escape | rb | star) ) | (escape (escape | rb | star)) | '_' )+ $4;
 
 contains = (star.escaped_term.star | star.number.star | star.attr.star) $1;
 prefix = (escaped_term.star | number.star | attr.star) $1;
@@ -69,10 +69,11 @@ verbatim = squote . ((any - squote - escape) | escape.any)+ . squote $2;
 wildcard = 'w' . verbatim $4;
 
 
-boost = arrow lb attr colon escaped_term rb $4;
-
-# unescaped_tag = '(any - (arrow | ':'))' lb single_tag :>> rb $4;
+assign_attr = arrow lb attr colon escaped_term rb $4;
 unescaped_tag = colon lb single_tag :>> rb $4;
+contains_tag = colon lb star.single_tag.star :>> rb $4;
+prefix_tag = colon lb single_tag.star :>> rb $4;
+suffix_tag = colon lb star.single_tag :>> rb $4;
 
 
 main := |*
@@ -103,7 +104,7 @@ main := |*
     tok.pos = ts-q->raw;
     tok.len = te - (ts + 1);
     tok.s = ts+1;
-    # printf("Nafraf: mod: %.*s\n", (int)tok.len, tok.s);
+    // printf("Nafraf: mod: %.*s\n", (int)tok.len, tok.s);
     RSQuery_Parse_v3(pParser, MODIFIER, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
@@ -113,7 +114,7 @@ main := |*
     tok.pos = ts-q->raw;
     tok.len = te - (ts + 1);
     tok.s = ts+1;
-    # printf("Nafraf: attr: %.*s\n", (int)tok.len, tok.s);
+    // printf("Nafraf: attr: %.*s\n", (int)tok.len, tok.s);
     RSQuery_Parse_v3(pParser, ATTRIBUTE, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
@@ -165,7 +166,7 @@ main := |*
   };
   lp => {
     tok.pos = ts-q->raw;
-    # printf("Nafraf: LP: %.*s\n", (int)(te-ts), ts);
+    // printf("Nafraf: LP: %.*s\n", (int)(te-ts), ts);
     RSQuery_Parse_v3(pParser, LP, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
@@ -174,7 +175,7 @@ main := |*
 
   rp => {
     tok.pos = ts-q->raw;
-    # printf("Nafraf: RP: %.*s\n", (int)(te-ts), ts);
+    // printf("Nafraf: RP: %.*s\n", (int)(te-ts), ts);
     RSQuery_Parse_v3(pParser, RP, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
@@ -182,7 +183,7 @@ main := |*
   };
   lb => {
     tok.pos = ts-q->raw;
-    # printf("Nafraf: LB: %.*s\n", (int)(te-ts), ts);
+    // printf("Nafraf: LB: %.*s\n", (int)(te-ts), ts);
     RSQuery_Parse_v3(pParser, LB, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
@@ -190,7 +191,7 @@ main := |*
   };
   rb => {
     tok.pos = ts-q->raw;
-    # printf("Nafraf: RB: %.*s\n", (int)(te-ts), ts);
+    // printf("Nafraf: RB: %.*s\n", (int)(te-ts), ts);
     RSQuery_Parse_v3(pParser, RB, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
@@ -198,7 +199,7 @@ main := |*
   };
   colon => {
     tok.pos = ts-q->raw;
-    # printf("Nafraf: COLON: %.*s\n", (int)(te-ts), ts);
+    // printf("Nafraf: COLON: %.*s\n", (int)(te-ts), ts);
     RSQuery_Parse_v3(pParser, COLON, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
@@ -242,7 +243,7 @@ main := |*
   };
   lsqb => {
     tok.pos = ts-q->raw;
-    # printf("Nafraf: lsqb: %.*s\n", (int)(te-ts), ts);
+    // printf("Nafraf: lsqb: %.*s\n", (int)(te-ts), ts);
     RSQuery_Parse_v3(pParser, LSQB, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
@@ -250,7 +251,7 @@ main := |*
   };
   rsqb => {
     tok.pos = ts-q->raw;
-    # printf("Nafraf rsqb: %.*s\n", (int)(te-ts), ts);
+    // printf("Nafraf rsqb: %.*s\n", (int)(te-ts), ts);
     RSQuery_Parse_v3(pParser, RSQB, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
@@ -265,7 +266,7 @@ main := |*
     tok.s = ts;
     tok.numval = 0;
     tok.pos = ts-q->raw;
-    # printf("Nafraf: escaped term: %.*s\n", (int)tok.len, tok.s);
+    // printf("Nafraf: escaped term: %.*s\n", (int)tok.len, tok.s);
     RSQuery_Parse_v3(pParser, TERM, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
@@ -275,14 +276,14 @@ main := |*
     unescaped_tag => {
     tok.len = 1;
     tok.s = ts;
-    # printf("Nafraf: COLON: %.*s\n", (int)(tok.len), tok.s);
+    // printf("Nafraf: COLON: %.*s\n", (int)(tok.len), tok.s);
     RSQuery_Parse_v3(pParser, COLON, tok, q);
 
     tok.len = 1;
     tok.s = ts + 1;
     tok.numval = 0;
     tok.pos = tok.s - q->raw;
-    # printf("Nafraf: LB: %.*s\n", (int)(tok.len), tok.s);
+    // printf("Nafraf: LB: %.*s\n", (int)(tok.len), tok.s);
     RSQuery_Parse_v3(pParser, LB, tok, q);
 
     tok.len = te-(ts + 3);
@@ -290,7 +291,7 @@ main := |*
     tok.numval = 0;
     tok.pos = tok.s - q->raw;
     tok.type = QT_TERM;
-    # printf("Nafraf: unescaped tag: %.*s\n", (int)tok.len, tok.s);
+    // printf("Nafraf: unescaped tag: %.*s\n", (int)tok.len, tok.s);
     RSQuery_Parse_v3(pParser, UNESCAPED_TAG, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
@@ -300,42 +301,9 @@ main := |*
     tok.s = te - 1;
     tok.numval = 0;
     tok.pos = tok.s - q->raw;
-    # printf("Nafraf: RB: %.*s\n", (int)(tok.len), tok.s);
+    // printf("Nafraf: RB: %.*s\n", (int)(tok.len), tok.s);
     RSQuery_Parse_v3(pParser, RB, tok, q);
   };
-
-
-  #boost => {
-  #  tok.pos = ts-q->raw;
-  #  tok.len = te - ts;
-  #  tok.s = ts+1;
-  #  # printf("Nafraf: ARROW: %.*s\n", (int)tok.len, tok.s);
-  #  RSQuery_Parse_v3(pParser, ARROW, tok, q);
-#
-  #  tok.len = 1;
-  #  tok.s = ts;
-  #  tok.numval = 0;
-  #  tok.pos = tok.s - q->raw;
-  #  # printf("Nafraf: LB: %.*s\n", (int)(tok.len), tok.s);
-  #  RSQuery_Parse_v3(pParser, LB, tok, q);
-#
-  #  tok.len = te-(ts + 4);
-  #  tok.s = ts + 3;
-  #  tok.numval = 0;
-  #  tok.pos = tok.s - q->raw;
-  #  # printf("Nafraf: boost: %.*s\n", (int)tok.len, tok.s);
-  #  RSQuery_Parse_v3(pParser, ATTRIBUTE, tok, q);
-  #  if (!QPCTX_ISOK(q)) {
-  #    fbreak;
-  #  }
-#
-  #  tok.len = 1;
-  #  tok.s = te - 1;
-  #  tok.numval = 0;
-  #  tok.pos = tok.s - q->raw;
-  #  # printf("Nafraf: RB: %.*s\n", (int)(tok.len), tok.s);
-  #  RSQuery_Parse_v3(pParser, RB, tok, q);
-  #};
 
   prefix => {
     int is_attr = (*ts == '$') ? 1 : 0;

@@ -452,15 +452,39 @@ def testTagAutoescaping(env):
     # Test exact match with brackets
     res = env.cmd('FT.SEARCH', 'idx', '@tag:{tag with {brackets\\}}', 'NOCONTENT')
     expected_result = [1, 'tag:6']
+    env.assertEqual(expected_result, res)
 
-    # Search with boosting
+    # Search with attributes
     res = env.cmd('FT.SEARCH', 'idx', '@tag:{xyz:2}=>{$weight:5.0}', 'NOCONTENT', 
                   'SORTBY', 'id', 'ASC')
-    expected_result = [2, 'tag:2', 'tag:3']
-    env.assertEqual(expected_result, res)
+    env.assertEqual(res, [2, 'tag:2', 'tag:3'])
 
     res = env.cmd('FT.SEARCH', 'idx',
                   '(@tag:{xyz:2} | @tag:{abc:1}) => { $weight: 5.0; }',
                   'NOCONTENT', 'SORTBY', 'id', 'ASC')
     expected_result = [3, 'tag:1', 'tag:2', 'tag:3']
     env.assertEqual(expected_result, res)
+
+    res = env.cmd('FT.SEARCH', 'idx', 
+                  '((@tag:{xyz:2}  @tag:{abc:1}) | @tag1:{val:3} (@tag2:{joe@mail.com} => { $weight:0.3 } )) => { $weight:0.2 }',
+                  'NOCONTENT')
+    env.assertEqual(res, [1, 'tag:3'])
+
+    # Test prefix/suffix/infix
+    res = env.cmd('FT.EXPLAIN', 'idx', '@tag:{abc\\*yxv*}')
+    env.assertEqual(res, 'TAG:@tag {\n  PREFIX{abc*yxv*}\n}\n')
+
+    res = env.cmd('FT.EXPLAIN', 'idx', '@tag1:{abc\\*yxv*}=>{$weight:3.4}',
+                  'PARAMS', '2', 'abc', 'hello')
+    env.assertEqual(res, 'TAG:@tag1 {\n  PREFIX{abc*yxv*}\n} => { $weight: 3.4; }\n')
+
+#     127.0.0.1:6379> FT.explaincli idx "@tag1:{abc\\*yxv*}=>{$weight:3.4}" PARAMS 2 abc 'hello' DIALECT 4
+# 1) TAG:@tag1 {
+# 2)   PREFIX{abc*yxv*}
+# 3) } => { $weight: 3.4; }
+# FT.explaincli idx "@tag1:{*abc\\**}=>{$weight:3.4}" PARAMS 2 abc 'hello' DIALECT 4
+# FT.explaincli idx "@tag1:{abc\\**}=>{$weight:3.4}" PARAMS 2 abc 'hello' DIALECT 4
+# FT.explaincli idx "@tag1:{abc\\**}=>{$weight:3.4}" PARAMS 2 abc 'hello' DIALECT 4
+    
+    # Test wildcard
+    
