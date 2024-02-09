@@ -53,13 +53,17 @@ squote = "'";
 escaped_character = escape (punct | space | escape);
 escaped_term = (((any - (punct | cntrl | space | escape)) | escaped_character) | '_')+ $0;
 
+# these are the punctuations that are not valid in a tag,
+# they have an especial meaning and need to be escaped
+tag_invalid_punct = (rb | star | escape);
+
 # valid_punct characters are equal to the separators except: rb, star, and escape
 valid_punct = ( '!' | '"' | '#' | '$' | '%' | '&' | squote | '(' | ')' | '+' | '-' | '.' | '/' | ':' | ';' | '<' | '=' | '>' | '?' | '@' | '[' | ']' | '^' | '`' | '{' | '}' | '~' | '|' | ',' );
 invalid_punct = punct - valid_punct;
 
 mod = '@'.escaped_term $ 1;
 attr = '$'.escaped_term $ 1;
-single_tag = ( (any - ( invalid_punct | escape | rb | star) ) | (escape (escape | rb | star)) | '_' )+ $4;
+single_tag = ( (any - ( invalid_punct | tag_invalid_punct) ) | (escape (tag_invalid_punct)) | '_' )+ $4;
 
 contains = (star.escaped_term.star | star.number.star | star.attr.star) $1;
 prefix = (escaped_term.star | number.star | attr.star) $1;
