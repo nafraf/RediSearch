@@ -390,58 +390,46 @@ def testTagAutoescaping(env):
     # Test exact match    
     res = env.cmd('FT.SEARCH', 'idx', '@tag:{abc:1}', 'NOCONTENT',
                   'SORTBY', 'id', 'ASC')
-    expected_result = [2, 'tag:1', 'tag:3']
-    env.assertEqual(expected_result, res)
+    env.assertEqual(res, [2, 'tag:1', 'tag:3'])
 
     res = env.cmd('FT.SEARCH', 'idx', '@tag:{abc:1|xyz:2}', 'NOCONTENT')
-    expected_result = [1, 'tag:7']
-    env.assertEqual(expected_result, res)
+    env.assertEqual(res, [1, 'tag:7'])
 
     res = env.cmd('FT.SEARCH', 'idx', '@tag:{_12\100}', 'NOCONTENT')
-    expected_result = [1, 'tag:8']
-    env.assertEqual(expected_result, res)
+    env.assertEqual(res, [1, 'tag:8'])
 
     res = env.cmd('FT.SEARCH', 'idx', '@tag:{_12@}', 'NOCONTENT')
-    expected_result = [1, 'tag:8']
-    env.assertEqual(expected_result, res)
+    env.assertEqual(res, [1, 'tag:8'])
 
     res = env.cmd('FT.SEARCH', 'idx', '@tag:{_@12\\\\345}', 'NOCONTENT')
-    expected_result = [1, 'tag:12']
-    env.assertEqual(expected_result, res)
+    env.assertEqual(res, [1, 'tag:12'])
 
     res = env.cmd('FT.SEARCH', 'idx', '@tag:{ab(12)}', 'NOCONTENT')
-    expected_result = [1, 'tag:10']
-    env.assertEqual(expected_result, res)
+    env.assertEqual(res, [1, 'tag:10'])
 
     # Test tag with '-'
     res = env.cmd('FT.SEARCH', 'idx', '@tag:{abc:1-xyz:2}', 'NOCONTENT')
-    expected_result = [1, 'tag:4']
-    env.assertEqual(expected_result, res)
+    env.assertEqual(res, [1, 'tag:4'])
 
     res = env.cmd('FT.SEARCH', 'idx', '@tag:{-99999}', 'NOCONTENT')
-    expected_result = [1, 'tag:9']
-    env.assertEqual(expected_result, res)
+    env.assertEqual(res, [1, 'tag:9'])
 
     # Test tag with '|' and ' '
     res = env.cmd('FT.SEARCH', 'idx', '@tag:{a|b-c d}', 'NOCONTENT')
-    expected_result = [1, 'tag:11']
-    env.assertEqual(expected_result, res)
+    env.assertEqual(res, [1, 'tag:11'])
 
     # AND Operator (INTERSECT queries)
     res = env.cmd('FT.SEARCH', 'idx', '@tag:{abc:1} @tag:{xyz:2}', 'NOCONTENT')
-    expected_result = [1, 'tag:3']
-    env.assertEqual(expected_result, res)
+    env.assertEqual(res, [1, 'tag:3'])
 
     # Negation Queries (using dash "-")
     res = env.cmd('FT.SEARCH', 'idx', '@tag:{abc:1} -@tag:{xyz:2}', 'NOCONTENT')
-    expected_result = [1, 'tag:1']
-    env.assertEqual(expected_result, res)
+    env.assertEqual(res, [1, 'tag:1'])
 
     # OR Operator (UNION queries)
     res = env.cmd('FT.SEARCH', 'idx', '@tag:{abc:1-xyz:2} | @tag:{joe@mail.com}',
                   'NOCONTENT', 'SORTBY', 'id', 'ASC')
-    expected_result = [2, 'tag:4', 'tag:5']
-    env.assertEqual(expected_result, res)
+    env.assertEqual(res, [2, 'tag:4', 'tag:5'])
 
     # Optional Queries (using tiled "~")
     res = env.cmd('FT.SEARCH', 'idx', '@tag:{abc:1} ~@tag:{xyz:2}',
@@ -489,6 +477,9 @@ def testTagAutoescaping(env):
     env.assertEqual(res, [4, 'tag:1', 'tag:3', 'tag:4', 'tag:7'])
 
     # Test suffix
+    res = env.cmd('FT.EXPLAIN', 'idx', '@tag:{*abc\\*yxv}')
+    env.assertEqual(res, 'TAG:@tag {\n  SUFFIX{*abc*yxv}\n}\n')
+
     res = env.cmd('FT.SEARCH', 'idx', '@tag:{*xyz:2}=>{$weight:3.4}',
                   'NOCONTENT', 'SORTBY', 'id', 'ASC')
     env.assertEqual(res, [4, 'tag:2', 'tag:3', 'tag:4', 'tag:7'])
@@ -508,4 +499,15 @@ def testTagAutoescaping(env):
     env.assertEqual(res, [1, 'tag:5'])
 
     # Test wildcard
+    res = env.cmd('FT.EXPLAIN', 'idx', "@tag1:{w'$param'}",
+                  'PARAMS', '2', 'param', 'hello world')
+    env.assertEqual(res, "TAG:@tag1 {\n  WILDCARD{hello world}\n}\n")
+
+    res = env.cmd('FT.EXPLAIN', 'idx', "@tag1:{      w'foo*:-;bar?' }",
+                  'PARAMS', '2', 'param', 'hello world')
+    env.assertEqual(res, "TAG:@tag1 {\n  WILDCARD{foo*:-;bar?}\n}\n")
+
+    res = env.cmd('FT.SEARCH', 'idx', "@tag:{w'*:1?xyz:*'}=>{$weight:3.4}",
+                  'NOCONTENT', 'SORTBY', 'id', 'ASC')
+    env.assertEqual(res, [2, 'tag:4', 'tag:7'])
     
