@@ -490,6 +490,9 @@ def testTagAutoescaping(env):
     env.assertEqual(res, [4, 'tag:2', 'tag:3', 'tag:4', 'tag:7'])
 
     # Test contains
+    res = env.cmd('FT.EXPLAIN', 'idx', '@tag:{*abc\\*yxv:*}')
+    env.assertEqual(res, 'TAG:@tag {\n  INFIX{*abc*yxv:*}\n}\n')
+
     res = env.cmd('FT.SEARCH', 'idx', '@tag:{*@mail.*}=>{$weight:3.4}',
                   'NOCONTENT')
     env.assertEqual(res, [1, 'tag:5'])
@@ -510,4 +513,3 @@ def testTagAutoescaping(env):
     res = env.cmd('FT.SEARCH', 'idx', "@tag:{w'*:1?xyz:*'}=>{$weight:3.4}",
                   'NOCONTENT', 'SORTBY', 'id', 'ASC')
     env.assertEqual(res, [2, 'tag:4', 'tag:7'])
-    
