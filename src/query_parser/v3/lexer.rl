@@ -75,9 +75,7 @@ as = 'AS'|'aS'|'As'|'as';
 verbatim = squote . ((any - squote - escape) | escape.any)+ . squote $2;
 wildcard = 'w' . verbatim $4;
 
-
 assign_attr = arrow lb attr colon escaped_term rb $4;
-
 
 contains_tag = colon lb star.single_tag.star :>> rb $1;
 prefix_tag = colon lb single_tag.star :>> rb $1;
@@ -98,6 +96,7 @@ main := |*
       fbreak;
     }
   };
+
   number => {
     tok.s = ts;
     tok.len = te-ts;
@@ -109,6 +108,7 @@ main := |*
       fbreak;
     }
   };
+
   mod => {
     tok.pos = ts-q->raw;
     tok.len = te - (ts + 1);
@@ -121,6 +121,7 @@ main := |*
       fbreak;
     }
   };
+
   attr => {
     tok.pos = ts-q->raw;
     tok.len = te - (ts + 1);
@@ -133,6 +134,7 @@ main := |*
       fbreak;
     }
   };
+
   arrow => {
     tok.pos = ts-q->raw;
     tok.len = te - ts;
@@ -145,6 +147,7 @@ main := |*
       fbreak;
     }
   };
+
   as => {
     tok.pos = ts-q->raw;
     tok.len = te - ts;
@@ -154,6 +157,7 @@ main := |*
       fbreak;
     }
   };
+
   inf => {
     tok.pos = ts-q->raw;
     tok.s = ts;
@@ -172,6 +176,7 @@ main := |*
       fbreak;
     }
   };
+
   or => {
     tok.pos = ts-q->raw;
     RSQuery_Parse_v3(pParser, OR, tok, q);
@@ -179,6 +184,7 @@ main := |*
       fbreak;
     }
   };
+
   lp => {
     tok.pos = ts-q->raw;
     #ifdef DEBUG
@@ -200,6 +206,7 @@ main := |*
       fbreak;
     }
   };
+
   lb => {
     tok.pos = ts-q->raw;
     #ifdef DEBUG
@@ -210,6 +217,7 @@ main := |*
       fbreak;
     }
   };
+
   rb => {
     tok.pos = ts-q->raw;
     #ifdef DEBUG
@@ -220,21 +228,25 @@ main := |*
       fbreak;
     }
   };
+
   colon => {
     tok.pos = ts-q->raw;
+    #ifdef DEBUG
     printf("Nafraf: COLON: %.*s\n", (int)(te-ts), ts);
+    #endif
     RSQuery_Parse_v3(pParser, COLON, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
     }
-   };
+  };
+
   semicolon => {
     tok.pos = ts-q->raw;
     RSQuery_Parse_v3(pParser, SEMICOLON, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
     }
-   };
+  };
 
   minus =>  {
     tok.pos = ts-q->raw;
@@ -243,6 +255,7 @@ main := |*
       fbreak;
     }
   };
+
   tilde => {
     tok.pos = ts-q->raw;
     RSQuery_Parse_v3(pParser, TILDE, tok, q);
@@ -250,13 +263,15 @@ main := |*
       fbreak;
     }
   };
- star => {
+
+  star => {
     tok.pos = ts-q->raw;
     RSQuery_Parse_v3(pParser, STAR, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
     }
   };
+
    percent => {
     tok.pos = ts-q->raw;
     RSQuery_Parse_v3(pParser, PERCENT, tok, q);
@@ -264,6 +279,7 @@ main := |*
       fbreak;
     }
   };
+
   lsqb => {
     tok.pos = ts-q->raw;
     #ifdef DEBUG
@@ -274,6 +290,7 @@ main := |*
       fbreak;
     }
   };
+
   rsqb => {
     tok.pos = ts-q->raw;
     #ifdef DEBUG
@@ -309,6 +326,9 @@ main := |*
     printf("Nafraf: COLON: %.*s\n", (int)(tok.len), tok.s);
     #endif
     RSQuery_Parse_v3(pParser, COLON, tok, q);
+    if (!QPCTX_ISOK(q)) {
+      fbreak;
+    }
 
     tok.len = 1;
     tok.s = ts + 1;
@@ -318,7 +338,9 @@ main := |*
     printf("Nafraf: LB: %.*s\n", (int)(tok.len), tok.s);
     #endif
     RSQuery_Parse_v3(pParser, LB, tok, q);
-
+    if (!QPCTX_ISOK(q)) {
+      fbreak;
+    }
 
     if(*(ts + 2) == 'w' && *(ts + 3) == '\'') {
       int is_attr = (*(ts + 4) == '$') ? 1 : 0;
@@ -354,6 +376,10 @@ main := |*
     printf("Nafraf: RB: %.*s\n", (int)(tok.len), tok.s);
     #endif
     RSQuery_Parse_v3(pParser, RB, tok, q);
+    if (!QPCTX_ISOK(q)) {
+      fbreak;
+    }
+
   };
 
   suffix_tag => {
@@ -363,6 +389,9 @@ main := |*
     printf("Nafraf: COLON: %.*s\n", (int)(tok.len), tok.s);
     #endif
     RSQuery_Parse_v3(pParser, COLON, tok, q);
+    if (!QPCTX_ISOK(q)) {
+      fbreak;
+    }
 
     tok.len = 1;
     tok.s = ts + 1;
@@ -372,6 +401,9 @@ main := |*
     printf("Nafraf: LB: %.*s\n", (int)(tok.len), tok.s);
     #endif
     RSQuery_Parse_v3(pParser, LB, tok, q);
+    if (!QPCTX_ISOK(q)) {
+      fbreak;
+    }
 
     int is_attr = (*(ts + 3) == '$') ? 1 : 0;
     tok.type = is_attr ? QT_PARAM_TERM : QT_TERM;
@@ -396,6 +428,9 @@ main := |*
     printf("Nafraf: RB: %.*s\n", (int)(tok.len), tok.s);
     #endif
     RSQuery_Parse_v3(pParser, RB, tok, q);
+    if (!QPCTX_ISOK(q)) {
+      fbreak;
+    }
   };
 
   prefix_tag => {
@@ -405,6 +440,9 @@ main := |*
     printf("Nafraf: COLON: %.*s\n", (int)(tok.len), tok.s);
     #endif
     RSQuery_Parse_v3(pParser, COLON, tok, q);
+    if (!QPCTX_ISOK(q)) {
+      fbreak;
+    }
 
     tok.len = 1;
     tok.s = ts + 1;
@@ -414,6 +452,9 @@ main := |*
     printf("Nafraf: LB: %.*s\n", (int)(tok.len), tok.s);
     #endif
     RSQuery_Parse_v3(pParser, LB, tok, q);
+    if (!QPCTX_ISOK(q)) {
+      fbreak;
+    }
 
     int is_attr = (*(ts + 2) == '$') ? 1 : 0;
     tok.type = is_attr ? QT_PARAM_TERM : QT_TERM;
@@ -438,6 +479,9 @@ main := |*
     printf("Nafraf: RB: %.*s\n", (int)(tok.len), tok.s);
     #endif
     RSQuery_Parse_v3(pParser, RB, tok, q);
+    if (!QPCTX_ISOK(q)) {
+      fbreak;
+    }
   };
 
   contains_tag => {
@@ -447,6 +491,9 @@ main := |*
     printf("Nafraf: COLON: %.*s\n", (int)(tok.len), tok.s);
     #endif
     RSQuery_Parse_v3(pParser, COLON, tok, q);
+    if (!QPCTX_ISOK(q)) {
+      fbreak;
+    }
 
     tok.len = 1;
     tok.s = ts + 2;
@@ -456,6 +503,9 @@ main := |*
     printf("Nafraf: LB: %.*s\n", (int)(tok.len), tok.s);
     #endif
     RSQuery_Parse_v3(pParser, LB, tok, q);
+    if (!QPCTX_ISOK(q)) {
+      fbreak;
+    }
 
     int is_attr = (*(ts + 3) == '$') ? 1 : 0;
     tok.type = is_attr ? QT_PARAM_TERM : QT_TERM;
@@ -480,6 +530,9 @@ main := |*
     printf("Nafraf: RB: %.*s\n", (int)(tok.len), tok.s);
     #endif
     RSQuery_Parse_v3(pParser, RB, tok, q);
+    if (!QPCTX_ISOK(q)) {
+      fbreak;
+    }
   };
 
   prefix => {
@@ -493,7 +546,6 @@ main := |*
     printf("Nafraf: prefix: %.*s\n", (int)tok.len, tok.s);
     #endif
     RSQuery_Parse_v3(pParser, PREFIX, tok, q);
-
     if (!QPCTX_ISOK(q)) {
       fbreak;
     }
@@ -510,7 +562,6 @@ main := |*
     printf("Nafraf: suffix: %.*s\n", (int)tok.len, tok.s);
     #endif
     RSQuery_Parse_v3(pParser, SUFFIX, tok, q);
-
     if (!QPCTX_ISOK(q)) {
       fbreak;
     }
@@ -527,7 +578,6 @@ main := |*
     printf("Nafraf: contains: %.*s\n", (int)tok.len, tok.s);
     #endif
     RSQuery_Parse_v3(pParser, CONTAINS, tok, q);
-
     if (!QPCTX_ISOK(q)) {
       fbreak;
     }
@@ -569,7 +619,6 @@ main := |*
 
 QueryNode *RSQuery_ParseRaw_v3(QueryParseCtx *q) {
   void *pParser = RSQuery_ParseAlloc_v3(rm_malloc);
-
 
   int cs, act;
   const char* ts = q->raw;
