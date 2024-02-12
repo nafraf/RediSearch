@@ -243,7 +243,9 @@ main := |*
     tok.s = ts;
     tok.numval = 0;
     tok.pos = ts-q->raw;
+    #ifdef DEBUG
     printf("Nafraf: term: %.*s\n", (int)tok.len, tok.s);
+    #endif
     RSQuery_Parse_v2(pParser, TERM, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
@@ -312,6 +314,9 @@ main := |*
     tok.len = te - (ts + 3 + is_attr);
     tok.s = ts + 2 + is_attr;
     tok.numval = 0;
+    #ifdef DEBUG
+    printf("Nafraf: wildcard: %.*s\n", (int)(tok.len), tok.s);
+    #endif
     RSQuery_Parse_v2(pParser, WILDCARD, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
