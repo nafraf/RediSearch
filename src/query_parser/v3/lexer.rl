@@ -474,6 +474,7 @@ main := |*
     tok.len = 1;
     tok.s = ts;
     #ifdef DEBUG
+    printf("Nafraf: suffix_tag\n");
     printf("Nafraf: COLON: %.*s\n", (int)(tok.len), tok.s);
     #endif
     RSQuery_Parse_v3(pParser, COLON, tok, q);
@@ -499,6 +500,11 @@ main := |*
     tok.s = ts + 3 + is_attr;
     tok.numval = 0;
     tok.pos = tok.s - q->raw;
+
+    // Invalid case: wildcard and suffix
+    if(tok.s[0] == 'w' && tok.s[1] == '\'') {
+      fbreak;
+    }
     #ifdef DEBUG
     printf("Nafraf: is_attr %d char:%c\n", is_attr, *(ts + 3));
     printf("Nafraf: suffix_tag: %.*s\n", (int)tok.len, tok.s);
@@ -525,6 +531,7 @@ main := |*
     tok.len = 1;
     tok.s = ts;
     #ifdef DEBUG
+    printf("Nafraf: prefix_tag\n");
     printf("Nafraf: COLON: %.*s\n", (int)(tok.len), tok.s);
     #endif
     RSQuery_Parse_v3(pParser, COLON, tok, q);
@@ -550,6 +557,11 @@ main := |*
     tok.s = ts + 2 + is_attr;
     tok.numval = 0;
     tok.pos = tok.s - q->raw;
+
+    // Invalid case: wildcard and prefix
+    if(tok.s[0] == 'w' && tok.s[1] == '\'') {
+      fbreak;
+    }
     #ifdef DEBUG
     printf("Nafraf: is_attr %d char:%c\n", is_attr, *(ts + 2));
     printf("Nafraf: prefix_tag: %.*s\n", (int)tok.len, tok.s);
@@ -576,6 +588,7 @@ main := |*
     tok.len = 1;
     tok.s = ts;
     #ifdef DEBUG
+    printf("Nafraf: contains_tag\n");
     printf("Nafraf: COLON: %.*s\n", (int)(tok.len), tok.s);
     #endif
     RSQuery_Parse_v3(pParser, COLON, tok, q);
@@ -601,6 +614,12 @@ main := |*
     tok.s = ts + 3 + is_attr;
     tok.numval = 0;
     tok.pos = tok.s - q->raw;
+
+    // Invalid case: wildcard and contains
+    if(tok.s[0] == 'w' && tok.s[1] == '\'') {
+      fbreak;
+    }
+
     #ifdef DEBUG
     printf("Nafraf: is_attr %d char:%c\n", is_attr, *(ts + 3));
     printf("Nafraf: contains_tag: %.*s\n", (int)tok.len, tok.s);
