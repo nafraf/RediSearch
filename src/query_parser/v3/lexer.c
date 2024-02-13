@@ -465,11 +465,11 @@ _eof_trans:
 	{act = 26;}
 	break;
 	case 15:
-/* #line 523 "lexer.rl" */
+/* #line 524 "lexer.rl" */
 	{act = 29;}
 	break;
 	case 16:
-/* #line 641 "lexer.rl" */
+/* #line 642 "lexer.rl" */
 	{act = 32;}
 	break;
 	case 17:
@@ -643,10 +643,10 @@ _eof_trans:
 	case 33:
 /* #line 326 "lexer.rl" */
 	{te = p+1;{
-    printf("Nafraf: unescaped_tag\n");
     tok.len = 1;
     tok.s = ts;
     #ifdef DEBUG
+    printf("Nafraf: unescaped_tag\n");
     printf("Nafraf: COLON: %.*s\n", (int)(tok.len), tok.s);
     #endif
     RSQuery_Parse_v3(pParser, COLON, tok, q);
@@ -669,10 +669,10 @@ _eof_trans:
     tok.len = te - (ts + 3);
     tok.s = ts + 2;
     tok.numval = 0;
-    // #ifdef DEBUG
+    #ifdef DEBUG
     printf("Nafraf: unescaped_tag token: %.*s\n", (int)(tok.len), tok.s);
     printf("Nafraf tok.s[0]= %c tok.s[1]= %c tok.s[tok.len-1]= %c\n", tok.s[0], tok.s[1], tok.s[tok.len-1]);
-    // #endif
+    #endif
 
     if(tok.s[0] == 'w' && tok.s[1] == '\'' && tok.s[tok.len-1] == '\'') {
       int is_attr = (*(ts + 4) == '$') ? 1 : 0;
@@ -718,11 +718,10 @@ _eof_trans:
 	case 34:
 /* #line 399 "lexer.rl" */
 	{te = p+1;{
-
-    printf("Nafraf: wildcard_tag\n");
     tok.len = 1;
     tok.s = ts;
     #ifdef DEBUG
+    printf("Nafraf: wildcard_tag\n");
     printf("Nafraf: COLON: %.*s\n", (int)(tok.len), tok.s);
     #endif
     RSQuery_Parse_v3(pParser, COLON, tok, q);
@@ -744,13 +743,15 @@ _eof_trans:
 
     tok.len = te - (ts + 3);
     tok.s = ts + 2;
-    // #ifdef DEBUG
+    #ifdef DEBUG
     printf("Nafraf: unescaped_tag token: %.*s\n", (int)(tok.len), tok.s);
     printf("Nafraf tok.s[0]= %c tok.s[1]= %c\n", tok.s[0], tok.s[1]);
-    // #endif
+    #endif
 
     if(tok.s[0] == 'w' && tok.s[1] == '\'') {
+      #ifdef DEBUG
       printf("Nafraf: wildcard in TAG: %.*s\n", (int)(te - (ts + 4)), ts + 4);
+      #endif
       int is_attr = (*(ts + 4) == '$') ? 1 : 0;
       tok.type = is_attr ? QT_PARAM_WILDCARD : QT_WILDCARD;
       tok.len = te - (ts + 6 + is_attr);
@@ -791,7 +792,7 @@ _eof_trans:
   }}
 	break;
 	case 35:
-/* #line 472 "lexer.rl" */
+/* #line 473 "lexer.rl" */
 	{te = p+1;{
     tok.len = 1;
     tok.s = ts;
@@ -844,7 +845,7 @@ _eof_trans:
   }}
 	break;
 	case 36:
-/* #line 523 "lexer.rl" */
+/* #line 524 "lexer.rl" */
 	{te = p+1;{
     tok.len = 1;
     tok.s = ts;
@@ -897,7 +898,7 @@ _eof_trans:
   }}
 	break;
 	case 37:
-/* #line 574 "lexer.rl" */
+/* #line 575 "lexer.rl" */
 	{te = p+1;{
     tok.len = 1;
     tok.s = ts;
@@ -950,7 +951,7 @@ _eof_trans:
   }}
 	break;
 	case 38:
-/* #line 625 "lexer.rl" */
+/* #line 626 "lexer.rl" */
 	{te = p+1;{
     int is_attr = (*ts == '$') ? 1 : 0;
     tok.type = is_attr ? QT_PARAM_TERM : QT_TERM;
@@ -968,7 +969,7 @@ _eof_trans:
   }}
 	break;
 	case 39:
-/* #line 656 "lexer.rl" */
+/* #line 657 "lexer.rl" */
 	{te = p+1;{
     int is_attr = (*(ts+1) == '$') ? 1 : 0;
     tok.type = is_attr ? QT_PARAM_TERM : QT_TERM;
@@ -987,7 +988,7 @@ _eof_trans:
   }}
 	break;
 	case 40:
-/* #line 673 "lexer.rl" */
+/* #line 674 "lexer.rl" */
 	{te = p+1;{
     int is_attr = (*(ts+2) == '$') ? 1 : 0;
     tok.type = is_attr ? QT_PARAM_TERM : QT_TERM;
@@ -1002,13 +1003,12 @@ _eof_trans:
   }}
 	break;
 	case 41:
-/* #line 686 "lexer.rl" */
+/* #line 687 "lexer.rl" */
 	{te = p+1;{
-
-    printf("Nafraf: wildcard_txt\n");
     tok.len = 1;
     tok.s = ts;
     #ifdef DEBUG
+    printf("Nafraf: wildcard_txt\n");
     printf("Nafraf: COLON: %.*s\n", (int)(tok.len), tok.s);
     #endif
     RSQuery_Parse_v3(pParser, COLON, tok, q);
@@ -1030,12 +1030,12 @@ _eof_trans:
 
     tok.len = te - (ts + 3);
     tok.s = ts + 2;
-    // #ifdef DEBUG
+    #ifdef DEBUG
     printf("Nafraf: unescaped_tag token: %.*s\n", (int)(tok.len), tok.s);
     printf("Nafraf tok.s[0]= %c tok.s[1]= %c\n", tok.s[0], tok.s[1]);
-    // #endif
-
     printf("Nafraf: wildcard in TXT: %.*s\n", (int)(te - (ts + 4)), ts + 4);
+    #endif
+    
     int is_attr = (*(ts + 4) == '$') ? 1 : 0;
     tok.type = is_attr ? QT_PARAM_WILDCARD : QT_WILDCARD;
     tok.len = te - (ts + 6 + is_attr);
@@ -1160,12 +1160,12 @@ _eof_trans:
 	case 50:
 /* #line 311 "lexer.rl" */
 	{te = p;p--;{
-    printf("Nafraf: escaped_term\n");
     tok.len = te-ts;
     tok.s = ts;
     tok.numval = 0;
     tok.pos = ts-q->raw;
     #ifdef DEBUG
+    printf("Nafraf: escaped_term\n");
     printf("Nafraf: escaped term: %.*s\n", (int)tok.len, tok.s);
     #endif
     RSQuery_Parse_v3(pParser, TERM, tok, q);
@@ -1177,10 +1177,10 @@ _eof_trans:
 	case 51:
 /* #line 326 "lexer.rl" */
 	{te = p;p--;{
-    printf("Nafraf: unescaped_tag\n");
     tok.len = 1;
     tok.s = ts;
     #ifdef DEBUG
+    printf("Nafraf: unescaped_tag\n");
     printf("Nafraf: COLON: %.*s\n", (int)(tok.len), tok.s);
     #endif
     RSQuery_Parse_v3(pParser, COLON, tok, q);
@@ -1203,10 +1203,10 @@ _eof_trans:
     tok.len = te - (ts + 3);
     tok.s = ts + 2;
     tok.numval = 0;
-    // #ifdef DEBUG
+    #ifdef DEBUG
     printf("Nafraf: unescaped_tag token: %.*s\n", (int)(tok.len), tok.s);
     printf("Nafraf tok.s[0]= %c tok.s[1]= %c tok.s[tok.len-1]= %c\n", tok.s[0], tok.s[1], tok.s[tok.len-1]);
-    // #endif
+    #endif
 
     if(tok.s[0] == 'w' && tok.s[1] == '\'' && tok.s[tok.len-1] == '\'') {
       int is_attr = (*(ts + 4) == '$') ? 1 : 0;
@@ -1250,7 +1250,7 @@ _eof_trans:
   }}
 	break;
 	case 52:
-/* #line 641 "lexer.rl" */
+/* #line 642 "lexer.rl" */
 	{te = p;p--;{
     int is_attr = (*(ts+1) == '$') ? 1 : 0;
     tok.type = is_attr ? QT_PARAM_TERM : QT_TERM;
@@ -1309,7 +1309,7 @@ _eof_trans:
 	{{p = ((te))-1;}}
 	break;
 	case 57:
-/* #line 641 "lexer.rl" */
+/* #line 642 "lexer.rl" */
 	{{p = ((te))-1;}{
     int is_attr = (*(ts+1) == '$') ? 1 : 0;
     tok.type = is_attr ? QT_PARAM_TERM : QT_TERM;
@@ -1438,12 +1438,12 @@ _eof_trans:
 	break;
 	case 25:
 	{{p = ((te))-1;}
-    printf("Nafraf: escaped_term\n");
     tok.len = te-ts;
     tok.s = ts;
     tok.numval = 0;
     tok.pos = ts-q->raw;
     #ifdef DEBUG
+    printf("Nafraf: escaped_term\n");
     printf("Nafraf: escaped term: %.*s\n", (int)tok.len, tok.s);
     #endif
     RSQuery_Parse_v3(pParser, TERM, tok, q);
@@ -1454,10 +1454,10 @@ _eof_trans:
 	break;
 	case 26:
 	{{p = ((te))-1;}
-    printf("Nafraf: unescaped_tag\n");
     tok.len = 1;
     tok.s = ts;
     #ifdef DEBUG
+    printf("Nafraf: unescaped_tag\n");
     printf("Nafraf: COLON: %.*s\n", (int)(tok.len), tok.s);
     #endif
     RSQuery_Parse_v3(pParser, COLON, tok, q);
@@ -1480,10 +1480,10 @@ _eof_trans:
     tok.len = te - (ts + 3);
     tok.s = ts + 2;
     tok.numval = 0;
-    // #ifdef DEBUG
+    #ifdef DEBUG
     printf("Nafraf: unescaped_tag token: %.*s\n", (int)(tok.len), tok.s);
     printf("Nafraf tok.s[0]= %c tok.s[1]= %c tok.s[tok.len-1]= %c\n", tok.s[0], tok.s[1], tok.s[tok.len-1]);
-    // #endif
+    #endif
 
     if(tok.s[0] == 'w' && tok.s[1] == '\'' && tok.s[tok.len-1] == '\'') {
       int is_attr = (*(ts + 4) == '$') ? 1 : 0;
