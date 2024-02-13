@@ -89,7 +89,9 @@ main := |*
     tok.pos = ts-q->raw;
     tok.len = te - (ts + 1);
     tok.s = ts+1;
+    #ifdef DEBUG
     printf("Nafraf: mod: %.*s\n", (int)tok.len, tok.s);
+    #endif
     RSQuery_Parse_v2(pParser, MODIFIER, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
@@ -99,7 +101,9 @@ main := |*
     tok.pos = ts-q->raw;
     tok.len = te - (ts + 1);
     tok.s = ts+1;
+    #ifdef DEBUG
     printf("Nafraf: attr: %.*s\n", (int)tok.len, tok.s);
+    #endif
     RSQuery_Parse_v2(pParser, ATTRIBUTE, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
