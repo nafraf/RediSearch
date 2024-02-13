@@ -547,6 +547,9 @@ def testTagAutoescaping(env):
 
     res = env.cmd('FT.EXPLAIN', 'idx', "@tag:{\\w'?*1'}", 'DIALECT', 5)
     env.assertEqual(res, "TAG:@tag {\n  \\w'?*1'\n}\n")
+
+    res = env.cmd('FT.EXPLAIN', 'idx', "@tag:{w\\'???1a}", 'DIALECT', 5)
+    env.assertEqual(res, "TAG:@tag {\n  w'???1a\n}\n")
     
     res = env.cmd('FT.EXPLAIN', 'idx', "@tag1:{w'$param'}",
                   'PARAMS', '2', 'param', 'hello world', 'DIALECT', 5)
