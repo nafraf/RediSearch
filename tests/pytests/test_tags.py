@@ -392,6 +392,11 @@ def testTagAutoescaping(env):
     env.cmd('HSET', '{doc}:11', 'tag', 'a|b-c d', 'id', '11')
     # this test generates the tag: '_@12\\345'
     env.cmd('HSET', '{doc}:12', 'tag', '_@12\\345', 'id', '12')
+    env.cmd('HSET', '{doc}:13', 'tag', '$literal', 'id', '13')
+    # tags with leading and trailing spaces
+    env.cmd('HSET', '{doc}:14', 'tag', ' with:space ', 'id', '14')
+    env.cmd('HSET', '{doc}:15', 'tag', '  leading:space', 'id', '15')
+    env.cmd('HSET', '{doc}:16', 'tag', 'trailing:space  ', 'id', '16')
     
     # Create index
     env.expect('FT.CREATE', 'idx', 'ON', 'HASH', 'PREFIX', '1', '{doc}:',
@@ -408,6 +413,13 @@ def testTagAutoescaping(env):
                   'DIALECT', 5)
     env.assertEqual(res, [1, '{doc}:7'])
 
+    # with dialect < 5, the pipe is an OR operator
+    expected_result = [3, '{doc}:1', '{doc}:2', '{doc}:3']
+    for dialect in [1, 2, 3, 4]:
+        res = env.cmd('FT.SEARCH', 'idx', '@tag:{abc\:1|xyz\:2}', 'NOCONTENT',
+                      'SORTBY', 'id', 'ASC', 'DIALECT', dialect)
+        env.assertEqual(res, expected_result)
+
     res = env.cmd('FT.SEARCH', 'idx', '@tag:{_12\100}', 'NOCONTENT',
                   'DIALECT', 5)
     env.assertEqual(res, [1, '{doc}:8'])
@@ -415,9 +427,10 @@ def testTagAutoescaping(env):
     res = env.cmd('FT.SEARCH', 'idx', '@tag:{_12@}', 'NOCONTENT', 'DIALECT', 5)
     env.assertEqual(res, [1, '{doc}:8'])
 
-    res = env.cmd('FT.SEARCH', 'idx', '@tag:{_@12\\\\345}', 'NOCONTENT',
-                  'DIALECT', 5)
-    env.assertEqual(res, [1, '{doc}:12'])
+    # escape character (backslash '\') is still a special character that needs
+    # escaping
+    res = env.cmd('FT.SEARCH', 'idx', '@tag:{_@12\\\\345}', 'DIALECT', 5)
+    env.assertEqual(res, [1, '{doc}:12', ['tag', '_@12\\345', 'id', '12']])
 
     res = env.cmd('FT.SEARCH', 'idx', '@tag:{ab(12)}', 'NOCONTENT',
                   'DIALECT', 5)
@@ -485,12 +498,8 @@ def testTagAutoescaping(env):
     env.assertEqual(res, "TAG:@tag {\n  PREFIX{a-b-c*}\n}\n")
 
     res = env.cmd('FT.EXPLAIN', 'idx', '@tag:{a-b-c\\*}', 'DIALECT', 5)
-    # TODO: the format in the cluster test is different
-    if not env.isCluster():    
-        env.assertEqual(res, 'TAG:@tag {\n  a-b-c*\n}\n')
-    else:
-        env.assertEqual(res, 'TAG:@tag {\n  a-b-c\\*\n}\n')
-    
+    env.assertEqual(res, 'TAG:@tag {\n  a-b-c*\n}\n')
+
     res = env.cmd('FT.EXPLAIN', 'idx', '@tag:{abc\\*yxv*}', 'DIALECT', 5)
     env.assertEqual(res, 'TAG:@tag {\n  PREFIX{abc*yxv*}\n}\n')
 
@@ -510,17 +519,12 @@ def testTagAutoescaping(env):
                   'NOCONTENT', 'SORTBY', 'id', 'ASC', 'DIALECT', 5)
     env.assertEqual(res, [4, '{doc}:1', '{doc}:3', '{doc}:4', '{doc}:7'])
 
-
     # Test suffix
     res = env.cmd('FT.EXPLAIN', 'idx', '@tag:{*a-b-c}', 'DIALECT', 5)
     env.assertEqual(res, "TAG:@tag {\n  SUFFIX{*a-b-c}\n}\n")
 
     res = env.cmd('FT.EXPLAIN', 'idx', '@tag:{\\*a-b-c}', 'DIALECT', 5)
-    # TODO: the format in the cluster tests is different
-    if not env.isCluster():
-        env.assertEqual(res, 'TAG:@tag {\n  *a-b-c\n}\n')
-    else:
-        env.assertEqual(res, 'TAG:@tag {\n  \\*a-b-c\n}\n')
+    env.assertEqual(res, 'TAG:@tag {\n  *a-b-c\n}\n')
 
     res = env.cmd('FT.EXPLAIN', 'idx', '@tag:{*abc\\*yxv}', 'DIALECT', 5)
     env.assertEqual(res, 'TAG:@tag {\n  SUFFIX{*abc*yxv}\n}\n')
@@ -528,7 +532,6 @@ def testTagAutoescaping(env):
     res = env.cmd('FT.SEARCH', 'idx', '@tag:{*xyz:2}=>{$weight:3.4}',
                   'NOCONTENT', 'SORTBY', 'id', 'ASC', 'DIALECT', 5)
     env.assertEqual(res, [4, '{doc}:2', '{doc}:3', '{doc}:4', '{doc}:7'])
-
 
     res = env.cmd('FT.SEARCH', 'idx', '@tag:{*$param}',
                   'PARAMS', '2', 'param', 'xyz:2',
@@ -540,11 +543,7 @@ def testTagAutoescaping(env):
     env.assertEqual(res, "TAG:@tag {\n  INFIX{*a-b-c*}\n}\n")
 
     res = env.cmd('FT.EXPLAIN', 'idx', '@tag:{\\*a-b-c\\*}', 'DIALECT', 5)
-    # TODO: the format in the cluster tests is different
-    if not env.isCluster():
-        env.assertEqual(res, 'TAG:@tag {\n  *a-b-c*\n}\n')
-    else:
-        env.assertEqual(res, 'TAG:@tag {\n  \\*a-b-c\\*\n}\n')
+    env.assertEqual(res, 'TAG:@tag {\n  *a-b-c*\n}\n')
 
     res = env.cmd('FT.EXPLAIN', 'idx', '@tag:{*abc\\*yxv:*}', 'DIALECT', 5)
     env.assertEqual(res, 'TAG:@tag {\n  INFIX{*abc*yxv:*}\n}\n')
@@ -557,37 +556,142 @@ def testTagAutoescaping(env):
                   'PARAMS', '2', 'param', '@mail.', 'NOCONTENT', 'DIALECT', 5)
     env.assertEqual(res, [1, '{doc}:5'])
 
+    # if '$' is escaped, it is treated as a regular character, and the parameter
+    # is not replaced
+    res = env.cmd('FT.SEARCH', 'idx', '@tag:{*\$param*}=>{$weight:3.4}',
+                  'PARAMS', '2', 'param', '@mail.', 'NOCONTENT', 'DIALECT', 5)
+    env.assertEqual(res, [0])
+
+    res = env.cmd('FT.SEARCH', 'idx', '@tag:{*\$literal*}',
+                  'PARAMS', '2', 'literal', '@mail.', 'NOCONTENT', 'DIALECT', 5)
+    env.assertEqual(res, [1, '{doc}:13'])
+
     # Test wildcard
     res = env.cmd('FT.EXPLAIN', 'idx', "@tag:{w'?*1'}", 'DIALECT', 5)
     env.assertEqual(res, "TAG:@tag {\n  WILDCARD{?*1}\n}\n")
 
-    res = env.cmd('FT.EXPLAIN', 'idx', "@tag:{\\w'?*1'}", 'DIALECT', 5)
-    env.assertEqual(res, "TAG:@tag {\n  \\w'?*1'\n}\n")
+    res = env.cmd('FT.EXPLAIN', 'idx', "@tag:{w'-@??'}", 'DIALECT', 5)
+    env.assertEqual(res, "TAG:@tag {\n  WILDCARD{-@??}\n}\n")
 
-    res = env.cmd('FT.EXPLAIN', 'idx', "@tag:{w\\'???1a}", 'DIALECT', 5)
-    env.assertEqual(res, "TAG:@tag {\n  w'???1a\n}\n")
-    
     res = env.cmd('FT.EXPLAIN', 'idx', "@tag1:{w'$param'}",
                   'PARAMS', '2', 'param', 'hello world', 'DIALECT', 5)
     env.assertEqual(res, "TAG:@tag1 {\n  WILDCARD{hello world}\n}\n")
 
-    res = env.cmd('FT.EXPLAIN', 'idx', "@tag1:{w'foo*:-;bar?'}",
+    res = env.cmd('FT.EXPLAIN', 'idx',
+                  "@tag1:{w'foo*:-;bar?'}=>{$weight:3.4; $inorder: true;}",
                   'PARAMS', '2', 'param', 'hello world', 'DIALECT', 5)
-    env.assertEqual(res, "TAG:@tag1 {\n  WILDCARD{foo*:-;bar?}\n}\n")
+    env.assertEqual(res, "TAG:@tag1 {\n  WILDCARD{foo*:-;bar?}\n} => { $weight: 3.4; $inorder: true; }\n")
 
-    res = env.cmd('FT.SEARCH', 'idx', "@tag:{w'*:1?xyz:*'}=>{$weight:3.4}",
+    res = env.cmd('FT.SEARCH', 'idx', "@tag:{w'*:1?xyz:*'}=>{$weight:3.4;}",
                   'NOCONTENT', 'SORTBY', 'id', 'ASC', 'DIALECT', 5)
     env.assertEqual(res, [2, '{doc}:4', '{doc}:7'])
 
-    # invalid syntax
+    # Test escaped wildcards which become tags
+    res = env.cmd('FT.EXPLAIN', 'idx', "@tag:{\\w'?*1'}", 'DIALECT', 5)
+    env.assertEqual(res, "TAG:@tag {\n  \\w'?*1'\n}\n")
+
+    res = env.cmd('FT.EXPLAIN', 'idx', "@tag:{\\w-:abc}", 'DIALECT', 5)
+    env.assertEqual(res, "TAG:@tag {\n  \\w-:abc\n}\n")
+
+    res = env.cmd('FT.EXPLAIN', 'idx', "(@tag:{\\w-:abc})", 'DIALECT', 5)
+    env.assertEqual(res, "TAG:@tag {\n  \\w-:abc\n}\n")
+
+    res = env.cmd('FT.EXPLAIN', 'idx', "@tag:{\\w'-abc}", 'DIALECT', 5)
+    env.assertEqual(res, "TAG:@tag {\n  \\w'-abc\n}\n")
+
+    res = env.cmd('FT.EXPLAIN', 'idx', "(@tag:{\\w'-abc})", 'DIALECT', 5)
+    env.assertEqual(res, "TAG:@tag {\n  \\w'-abc\n}\n")
+
+    res = env.cmd('FT.EXPLAIN', 'idx', "(@tag:{w'-abc})", 'DIALECT', 5)
+    env.assertEqual(res, "TAG:@tag {\n  w'-abc\n}\n")
+
+    res = env.cmd('FT.EXPLAIN', 'idx', "@tag:{w\\'???1a}", 'DIALECT', 5)
+    env.assertEqual(res, "TAG:@tag {\n  w'???1a\n}\n")
+
+    # Test tags with leading and trailing spaces
+    res = env.cmd('FT.SEARCH', 'idx', "@tag:{*with:space*}", 'DIALECT', 5)
+    env.assertEqual(res,  [1, '{doc}:14', ['tag', ' with:space ', 'id', '14']])
+
+    # Test tags with leading spaces
+    expected_result = [1, '{doc}:15', ['tag', '  leading:space', 'id', '15']]
+
+    # TODO: This fails because the parser doesn't handle leading spaces
+    res = env.cmd('FT.SEARCH', 'idx', "@tag:{  leading*}", 'DIALECT', 5)
+    env.assertEqual(res, expected_result)
+
+    # TODO: This fails because the parser doesn't handle leading spaces
+    res = env.cmd('FT.SEARCH', 'idx', "@tag:{  leading:space}", 'DIALECT', 5)
+    env.assertEqual(res, expected_result)
+
+    res = env.cmd('FT.SEARCH', 'idx', "@tag:{*eading:space}", 'DIALECT', 5)
+    env.assertEqual(res, expected_result)
+
+    # Test tags with trailing spaces
+    expected_result = [1, '{doc}:16', ['tag', 'trailing:space  ', 'id', '16']]
+
+    res = env.cmd('FT.SEARCH', 'idx', "@tag:{trailing*}", 'DIALECT', 5)
+    env.assertEqual(res, expected_result)
+
+    res = env.cmd('FT.SEARCH', 'idx', "@tag:{trailing:spac*}", 'DIALECT', 5)
+    env.assertEqual(res, expected_result)
+
+    # TODO: This fails because the parser doesn't handle trailing spaces
+    res = env.cmd('FT.SEARCH', 'idx', "@tag:{trailing:space  }", 'DIALECT', 5)
+    env.assertEqual(res, expected_result)
+
+def testInvalidSyntax(env):
+    # Create index
+    env.expect('FT.CREATE', 'idx', 'ON', 'HASH', 'PREFIX', '1', '{doc}:',
+               'SCHEMA', 'tag', 'TAG', 'SORTABLE', 'id',
+               'NUMERIC', 'SORTABLE').ok()
+    waitForIndex(env, 'idx')
+
     with env.assertResponseError(contained='Syntax error'):
         env.cmd('FT.EXPLAIN', 'idx', "@tag:{ w'?*1'}", 'DIALECT', 5)
+
+    with env.assertResponseError(contained='Syntax error'):
         env.cmd('FT.EXPLAIN', 'idx', "@tag:{w'?*1' }", 'DIALECT', 5)
-        env.cmd('FT.EXPLAIN', 'idx', "@tag:{w\\'?1'}", 'DIALECT', 5)
+
+    with env.assertResponseError(contained='Syntax error'):
         env.cmd('FT.EXPLAIN', 'idx', "@tag:{w\\'?*1'}", 'DIALECT', 5)
+
+    with env.assertResponseError(contained='Syntax error'):
         env.cmd('FT.SEARCH', 'idx', '@tag:{abc:1\\}', 'DIALECT', 5)
+
+    with env.assertResponseError(contained='Syntax error'):
         env.cmd('FT.SEARCH', 'idx', "@tag:{w'1?'*}", 'DIALECT', 5)
+
+    with env.assertResponseError(contained='Syntax error'):
         env.cmd('FT.SEARCH', 'idx', "@tag:{*w'1?'}", 'DIALECT', 5)
+
+    with env.assertResponseError(contained='Syntax error'):
         env.cmd('FT.SEARCH', 'idx', "@tag:{*w'1?'*}", 'DIALECT', 5)
-        
-        
+
+    with env.assertResponseError(contained='Syntax error'):
+        env.cmd('FT.SEARCH', 'idx', "@tag:{*\\w'abc'\\*}", 'DIALECT', 5)
+    
+    with env.assertResponseError(contained='Syntax error'):
+        env.cmd("FT.SEARCH idx @tag:{w'-abc*} DIALECT 5")
+
+    with env.assertResponseError(contained='Syntax error'):
+        env.cmd('FT.SEARCH', 'idx', "(@tag:{\\w'-abc*})", 'DIALECT', 5)
+         
+    with env.assertResponseError(contained='Syntax error'):
+        env.cmd("FT.SEARCH idx '@tag:{*w'-abc*}' DIALECT 5")
+
+    with env.assertResponseError(contained='Syntax error'):
+        env.cmd("FT.SEARCH idx @t1:(%) DIALECT 5")
+
+    with env.assertResponseError(contained='Syntax error'):
+        env.cmd("FT.SEARCH idx @t1:(|) DIALECT 5")
+
+    with env.assertResponseError(contained='Syntax error'):
+        env.cmd("FT.SEARCH idx @t1:({) DIALECT 5")
+
+    # test punct character
+    with env.assertResponseError(contained='Syntax error'):
+        env.cmd("FT.explaincli idx @t1:> DIALECT 5")
+
+    # test cntrl character
+    with env.assertResponseError(contained='Syntax error'):
+        env.cmd("FT.explaincli idx @t1:\10 DIALECT 5")

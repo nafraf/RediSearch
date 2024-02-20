@@ -909,7 +909,7 @@ _eof_trans:
     }
     #ifdef DEBUG
     printf("Nafraf: is_attr %d char:%c\n", is_attr, *(ts + 2));
-    printf("Nafraf: prefix_tag: %.*s\n", (int)tok.len, tok.s);
+    printf("Nafraf: prefix_tag: [%.*s]\n", (int)tok.len, tok.s);
     #endif
     RSQuery_Parse_v3(pParser, PREFIX, tok, q);
     if (!QPCTX_ISOK(q)) {
@@ -1606,7 +1606,7 @@ _eof_trans:
     }
     #ifdef DEBUG
     printf("Nafraf: is_attr %d char:%c\n", is_attr, *(ts + 2));
-    printf("Nafraf: prefix_tag: %.*s\n", (int)tok.len, tok.s);
+    printf("Nafraf: prefix_tag: [%.*s]\n", (int)tok.len, tok.s);
     #endif
     RSQuery_Parse_v3(pParser, PREFIX, tok, q);
     if (!QPCTX_ISOK(q)) {
