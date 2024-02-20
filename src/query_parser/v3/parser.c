@@ -33,7 +33,8 @@
 
 #include "../parse.h"
 
-// unescape a string (non null terminated) and return the new length (may be shorter than the original. This manipulates the string itself
+// unescape a string (non null terminated) and return the new length (may be
+// shorter than the original. This manipulates the string itself
 static size_t unescapen(char *s, size_t sz) {
 
   char *dst = s;
@@ -51,6 +52,31 @@ static size_t unescapen(char *s, size_t sz) {
 
   return (size_t)(dst - s);
 }
+
+// trim spaces of a string (non null terminated) and return the new length
+// (may be shorter than the original. This manipulates the string itself
+// static size_t trimspaces(QueryToken *qt) {
+//   char *dst = qt->s;
+//   char *src = dst;
+//   char *end = qt->s + qt->len;
+
+//   // Trim leading space
+//   while(src < end && isspace(*src)) {
+//     *dst++ = *src++;
+//   }
+//   if (src == end) {
+//     return 0;
+//   }
+
+//   // Trim trailing space
+//   while (end > src && isspace(*(end - 1))) {
+//     end--;
+//   }
+//   qt->len = (size_t)(end - src);
+//   qt->s = dst;
+//   printf("Nafraf: trimspaces s = %.*s\n", (int)(end - src), qt->s);
+//   return (size_t)(end - src);
+// }
 
 #define NODENN_BOTH_VALID 0
 #define NODENN_BOTH_INVALID -1
@@ -1907,12 +1933,17 @@ static YYACTIONTYPE yy_reduce(
         break;
       case 39: /* affix ::= PREFIX */
 {
+    printf("Nafraf: ParserV3 affix(yylhsminor.yy13) ::= PREFIX(yymsp[0].minor.yy0) . \n");
+    // trimspaces(&yymsp[0].minor.yy0);
+    printf("Nafraf: ParserV3 affix(yylhsminor.yy13) ::= PREFIX(yymsp[0].minor.yy0) . yymsp[0].minor.yy0.s = %s, yymsp[0].minor.yy0.len = %d \n", yymsp[0].minor.yy0.s, yymsp[0].minor.yy0.len);
     yylhsminor.yy13 = NewPrefixNode_WithParams(ctx, &yymsp[0].minor.yy0, true, false);
 }
   yymsp[0].minor.yy13 = yylhsminor.yy13;
         break;
       case 40: /* affix ::= SUFFIX */
 {
+    printf("Nafraf: ParserV3 suffix(yylhsminor.yy13) ::= SUFFIX(yymsp[0].minor.yy0) . \n");
+    // yymsp[0].minor.yy0.len = trimspaces((char*)yymsp[0].minor.yy0.s, yymsp[0].minor.yy0.len);
     yylhsminor.yy13 = NewPrefixNode_WithParams(ctx, &yymsp[0].minor.yy0, false, true);
 }
   yymsp[0].minor.yy13 = yylhsminor.yy13;

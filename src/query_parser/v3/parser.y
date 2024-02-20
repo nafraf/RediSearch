@@ -71,7 +71,8 @@
 
 #include "../parse.h"
 
-// unescape a string (non null terminated) and return the new length (may be shorter than the original. This manipulates the string itself
+// unescape a string (non null terminated) and return the new length (may be
+// shorter than the original. This manipulates the string itself
 static size_t unescapen(char *s, size_t sz) {
 
   char *dst = s;
@@ -89,6 +90,31 @@ static size_t unescapen(char *s, size_t sz) {
 
   return (size_t)(dst - s);
 }
+
+// trim spaces of a string (non null terminated) and return the new length
+// (may be shorter than the original. This manipulates the string itself
+// static size_t trimspaces(QueryToken *qt) {
+//   char *dst = qt->s;
+//   char *src = dst;
+//   char *end = qt->s + qt->len;
+
+//   // Trim leading space
+//   while(src < end && isspace(*src)) {
+//     *dst++ = *src++;
+//   }
+//   if (src == end) {
+//     return 0;
+//   }
+
+//   // Trim trailing space
+//   while (end > src && isspace(*(end - 1))) {
+//     end--;
+//   }
+//   qt->len = (size_t)(end - src);
+//   qt->s = dst;
+//   printf("Nafraf: trimspaces s = %.*s\n", (int)(end - src), qt->s);
+//   return (size_t)(end - src);
+// }
 
 #define NODENN_BOTH_VALID 0
 #define NODENN_BOTH_INVALID -1
@@ -662,10 +688,15 @@ text_expr(A) ::= TILDE text_expr(B) . {
 /////////////////////////////////////////////////////////////////
 
 affix(A) ::= PREFIX(B) . {
+    printf("Nafraf: ParserV3 affix(A) ::= PREFIX(B) . \n");
+    // trimspaces(&B);
+    printf("Nafraf: ParserV3 affix(A) ::= PREFIX(B) . B.s = %s, B.len = %d \n", B.s, B.len);
     A = NewPrefixNode_WithParams(ctx, &B, true, false);
 }
 
 affix(A) ::= SUFFIX(B) . {
+    printf("Nafraf: ParserV3 suffix(A) ::= SUFFIX(B) . \n");
+    // B.len = trimspaces((char*)B.s, B.len);
     A = NewPrefixNode_WithParams(ctx, &B, false, true);
 }
 

@@ -366,6 +366,15 @@ main := |*
       //   tok.len--;
       //   tok.s++;
       // }
+      // remove leading spaces
+      while(tok.len && isspace(tok.s[0])) {
+        tok.s++;
+        tok.len--;
+      }
+      // remove trailing spaces
+      while(tok.len > 1 && isspace(tok.s[tok.len-1])) {
+        tok.len--;
+      }
       tok.pos = tok.s - q->raw;
       tok.type = QT_TERM;
       #ifdef DEBUG
@@ -507,7 +516,7 @@ main := |*
     }
     #ifdef DEBUG
     printf("Nafraf: is_attr %d char:%c\n", is_attr, *(ts + 3));
-    printf("Nafraf: suffix_tag: %.*s\n", (int)tok.len, tok.s);
+    printf("Nafraf: suffix_tag: [%.*s]\n", (int)tok.len, tok.s);
     #endif
     RSQuery_Parse_v3(pParser, SUFFIX, tok, q);
     if (!QPCTX_ISOK(q)) {
@@ -557,6 +566,11 @@ main := |*
     // Invalid case: wildcard and prefix
     if(tok.s[0] == 'w' && tok.s[1] == '\'') {
       fbreak;
+    }
+    // remove leading spaces
+    while(tok.len && isspace(tok.s[0])) {
+      tok.s++;
+      tok.len--;
     }
     #ifdef DEBUG
     printf("Nafraf: is_attr %d char:%c\n", is_attr, *(ts + 2));

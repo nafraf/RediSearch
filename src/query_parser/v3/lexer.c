@@ -28,7 +28,7 @@ void *RSQuery_ParseAlloc_v3(void *(*mallocProc)(size_t));
 void RSQuery_ParseFree_v3(void *p, void (*freeProc)(void *));
 
 
-/* #line 753 "lexer.rl" */
+/* #line 767 "lexer.rl" */
 
 
 
@@ -318,7 +318,7 @@ static const int query_error = -1;
 static const int query_en_main = 52;
 
 
-/* #line 756 "lexer.rl" */
+/* #line 770 "lexer.rl" */
 
 QueryNode *RSQuery_ParseRaw_v3(QueryParseCtx *q) {
   void *pParser = RSQuery_ParseAlloc_v3(rm_malloc);
@@ -335,7 +335,7 @@ QueryNode *RSQuery_ParseRaw_v3(QueryParseCtx *q) {
 	act = 0;
 	}
 
-/* #line 764 "lexer.rl" */
+/* #line 778 "lexer.rl" */
   QueryToken tok = {.len = 0, .pos = 0, .s = 0};
 
   //parseCtx ctx = {.root = NULL, .ok = 1, .errorMsg = NULL, .q = q};
@@ -482,15 +482,15 @@ _eof_trans:
 	{act = 26;}
 	break;
 	case 15:
-/* #line 393 "lexer.rl" */
+/* #line 402 "lexer.rl" */
 	{act = 27;}
 	break;
 	case 16:
-/* #line 529 "lexer.rl" */
+/* #line 538 "lexer.rl" */
 	{act = 30;}
 	break;
 	case 17:
-/* #line 651 "lexer.rl" */
+/* #line 665 "lexer.rl" */
 	{act = 33;}
 	break;
 	case 18:
@@ -707,6 +707,15 @@ _eof_trans:
       //   tok.len--;
       //   tok.s++;
       // }
+      // remove leading spaces
+      while(tok.len && isspace(tok.s[0])) {
+        tok.s++;
+        tok.len--;
+      }
+      // remove trailing spaces
+      while(tok.len > 1 && isspace(tok.s[tok.len-1])) {
+        tok.len--;
+      }
       tok.pos = tok.s - q->raw;
       tok.type = QT_TERM;
       #ifdef DEBUG
@@ -732,7 +741,7 @@ _eof_trans:
   }}
 	break;
 	case 35:
-/* #line 393 "lexer.rl" */
+/* #line 402 "lexer.rl" */
 	{te = p+1;{
     tok.numval = 0;
     tok.len = 1;
@@ -781,7 +790,7 @@ _eof_trans:
   }}
 	break;
 	case 36:
-/* #line 440 "lexer.rl" */
+/* #line 449 "lexer.rl" */
 	{te = p+1;{
     tok.numval = 0;
     tok.len = 1;
@@ -819,7 +828,7 @@ _eof_trans:
   }}
 	break;
 	case 37:
-/* #line 476 "lexer.rl" */
+/* #line 485 "lexer.rl" */
 	{te = p+1;{
     tok.numval = 0;
     tok.len = 1;
@@ -854,7 +863,7 @@ _eof_trans:
     }
     #ifdef DEBUG
     printf("Nafraf: is_attr %d char:%c\n", is_attr, *(ts + 3));
-    printf("Nafraf: suffix_tag: %.*s\n", (int)tok.len, tok.s);
+    printf("Nafraf: suffix_tag: [%.*s]\n", (int)tok.len, tok.s);
     #endif
     RSQuery_Parse_v3(pParser, SUFFIX, tok, q);
     if (!QPCTX_ISOK(q)) {
@@ -874,7 +883,7 @@ _eof_trans:
   }}
 	break;
 	case 38:
-/* #line 529 "lexer.rl" */
+/* #line 538 "lexer.rl" */
 	{te = p+1;{
     tok.numval = 0;
     tok.len = 1;
@@ -907,6 +916,11 @@ _eof_trans:
     if(tok.s[0] == 'w' && tok.s[1] == '\'') {
       {p++; goto _out; }
     }
+    // remove leading spaces
+    while(tok.len && isspace(tok.s[0])) {
+      tok.s++;
+      tok.len--;
+    }
     #ifdef DEBUG
     printf("Nafraf: is_attr %d char:%c\n", is_attr, *(ts + 2));
     printf("Nafraf: prefix_tag: [%.*s]\n", (int)tok.len, tok.s);
@@ -929,7 +943,7 @@ _eof_trans:
   }}
 	break;
 	case 39:
-/* #line 582 "lexer.rl" */
+/* #line 596 "lexer.rl" */
 	{te = p+1;{
     tok.numval = 0;
     tok.len = 1;
@@ -984,7 +998,7 @@ _eof_trans:
   }}
 	break;
 	case 40:
-/* #line 635 "lexer.rl" */
+/* #line 649 "lexer.rl" */
 	{te = p+1;{
     int is_attr = (*ts == '$') ? 1 : 0;
     tok.type = is_attr ? QT_PARAM_TERM : QT_TERM;
@@ -1002,7 +1016,7 @@ _eof_trans:
   }}
 	break;
 	case 41:
-/* #line 667 "lexer.rl" */
+/* #line 681 "lexer.rl" */
 	{te = p+1;{
     int is_attr = (*(ts + 1) == '$') ? 1 : 0;
     tok.type = is_attr ? QT_PARAM_TERM : QT_TERM;
@@ -1021,7 +1035,7 @@ _eof_trans:
   }}
 	break;
 	case 42:
-/* #line 684 "lexer.rl" */
+/* #line 698 "lexer.rl" */
 	{te = p+1;{
     int is_attr = (*(ts+2) == '$') ? 1 : 0;
     tok.type = is_attr ? QT_PARAM_TERM : QT_TERM;
@@ -1036,7 +1050,7 @@ _eof_trans:
   }}
 	break;
 	case 43:
-/* #line 697 "lexer.rl" */
+/* #line 711 "lexer.rl" */
 	{te = p+1;{
     tok.numval = 0;
     tok.len = 1;
@@ -1203,7 +1217,7 @@ _eof_trans:
   }}
 	break;
 	case 53:
-/* #line 393 "lexer.rl" */
+/* #line 402 "lexer.rl" */
 	{te = p;p--;{
     tok.numval = 0;
     tok.len = 1;
@@ -1252,7 +1266,7 @@ _eof_trans:
   }}
 	break;
 	case 54:
-/* #line 651 "lexer.rl" */
+/* #line 665 "lexer.rl" */
 	{te = p;p--;{
     int is_attr = (*(ts + 1) == '$') ? 1 : 0;
     tok.type = is_attr ? QT_PARAM_TERM : QT_TERM;
@@ -1311,7 +1325,7 @@ _eof_trans:
 	{{p = ((te))-1;}}
 	break;
 	case 59:
-/* #line 651 "lexer.rl" */
+/* #line 665 "lexer.rl" */
 	{{p = ((te))-1;}{
     int is_attr = (*(ts + 1) == '$') ? 1 : 0;
     tok.type = is_attr ? QT_PARAM_TERM : QT_TERM;
@@ -1499,6 +1513,15 @@ _eof_trans:
       //   tok.len--;
       //   tok.s++;
       // }
+      // remove leading spaces
+      while(tok.len && isspace(tok.s[0])) {
+        tok.s++;
+        tok.len--;
+      }
+      // remove trailing spaces
+      while(tok.len > 1 && isspace(tok.s[tok.len-1])) {
+        tok.len--;
+      }
       tok.pos = tok.s - q->raw;
       tok.type = QT_TERM;
       #ifdef DEBUG
@@ -1604,6 +1627,11 @@ _eof_trans:
     if(tok.s[0] == 'w' && tok.s[1] == '\'') {
       {p++; goto _out; }
     }
+    // remove leading spaces
+    while(tok.len && isspace(tok.s[0])) {
+      tok.s++;
+      tok.len--;
+    }
     #ifdef DEBUG
     printf("Nafraf: is_attr %d char:%c\n", is_attr, *(ts + 2));
     printf("Nafraf: prefix_tag: [%.*s]\n", (int)tok.len, tok.s);
@@ -1648,7 +1676,7 @@ _eof_trans:
 	}
 	}
 	break;
-/* #line 1652 "lexer.c" */
+/* #line 1680 "lexer.c" */
 		}
 	}
 
@@ -1661,7 +1689,7 @@ _again:
 /* #line 1 "NONE" */
 	{ts = 0;}
 	break;
-/* #line 1665 "lexer.c" */
+/* #line 1693 "lexer.c" */
 		}
 	}
 
@@ -1679,7 +1707,7 @@ _again:
 	_out: {}
 	}
 
-/* #line 772 "lexer.rl" */
+/* #line 786 "lexer.rl" */
 
   if (QPCTX_ISOK(q)) {
     RSQuery_Parse_v3(pParser, 0, tok, q);
