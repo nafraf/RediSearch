@@ -53,7 +53,7 @@ squote = "'";
 escaped_character = escape (punct | space | escape);
 escaped_term = (((any - (punct | cntrl | space | escape)) | escaped_character) | '_' | '?')+ $0;
 
-# these are the punctuations that are not valid in a tag, they have an especial
+# these are the punctuations that are not valid in a tag, they have special
 # meaning and need to be escaped to be considered as part of a tag
 tag_invalid_punct = (rb | star | escape | '$');
 
@@ -73,18 +73,17 @@ prefix = (escaped_term.star | number.star | attr.star) $1;
 suffix = (star.escaped_term | star.number | star.attr) $1;
 as = 'AS'|'aS'|'As'|'as';
 verbatim = squote . ((any - squote - escape) | escape.any)+ . squote $2;
-wildcard = 'w' . verbatim $4;
+wildcard = 'w' . verbatim $2;
 
-assign_attr = arrow lb attr colon escaped_term rb $4;
+assign_attr = arrow lb attr colon escaped_term rb $2;
 
-contains_tag = colon lb star.single_tag.star :>> rb $1;
-prefix_tag = colon lb single_tag.star :>> rb $1;
-suffix_tag = colon lb star.single_tag :>> rb $1;
-unescaped_tag = (colon lb single_tag :>> rb $1) 
-              | (colon lb escape wildcard :>> rb $1) 
-              | (colon lb escape 'w' single_tag :>> rb $1);
-wildcard_tag = colon lb wildcard :>> rb $4;
-wildcard_txt = colon lp wildcard :>> rp $4;
+contains_tag = colon lb star.single_tag.star rb $1;
+prefix_tag = colon lb single_tag.star rb $1;
+suffix_tag = colon lb star.single_tag rb $1;
+unescaped_tag = colon lb (single_tag | escape wildcard) rb $1;
+unescaped_tag2 = colon lb (escape 'w' single_tag) rb $1;
+wildcard_tag = colon lb wildcard rb $1;
+wildcard_txt = colon lp wildcard rp $1;
 
 main := |*
 
@@ -335,9 +334,7 @@ main := |*
       fbreak;
     }
 
-    tok.len = 1;
     tok.s = ts + 1;
-    tok.numval = 0;
     tok.pos = tok.s - q->raw;
     #ifdef DEBUG
     printf("Nafraf: LB: %.*s\n", (int)(tok.len), tok.s);
@@ -349,7 +346,6 @@ main := |*
 
     tok.len = te - (ts + 3);
     tok.s = ts + 2;
-    tok.numval = 0;
     #ifdef DEBUG
     printf("Nafraf: unescaped_tag token: %.*s\n", (int)(tok.len), tok.s);
     printf("Nafraf tok.s[0]= %c tok.s[1]= %c tok.s[tok.len-1]= %c\n", tok.s[0], tok.s[1], tok.s[tok.len-1]);
@@ -361,7 +357,6 @@ main := |*
       tok.len = te - (ts + 6 + is_attr);
       tok.s = ts + 4 + is_attr;
       tok.pos = tok.s - q->raw;
-
       #ifdef DEBUG
       printf("Nafraf: wildcard: %.*s\n", (int)tok.len, tok.s);
       #endif
@@ -384,7 +379,6 @@ main := |*
 
     tok.len = 1;
     tok.s = te - 1;
-    tok.numval = 0;
     tok.pos = tok.s - q->raw;
     #ifdef DEBUG
     printf("Nafraf: RB: %.*s\n", (int)(tok.len), tok.s);
@@ -396,7 +390,8 @@ main := |*
 
   };
 
-  wildcard_tag => {
+  unescaped_tag2 => {
+    tok.numval = 0;
     tok.len = 1;
     tok.s = ts;
     #ifdef DEBUG
@@ -408,9 +403,7 @@ main := |*
       fbreak;
     }
 
-    tok.len = 1;
     tok.s = ts + 1;
-    tok.numval = 0;
     tok.pos = tok.s - q->raw;
     #ifdef DEBUG
     printf("Nafraf: LB: %.*s\n", (int)(tok.len), tok.s);
@@ -422,47 +415,57 @@ main := |*
 
     tok.len = te - (ts + 3);
     tok.s = ts + 2;
+    tok.pos = tok.s - q->raw;
+    tok.type = QT_TERM;
+    RSQuery_Parse_v3(pParser, UNESCAPED_TAG, tok, q);
     #ifdef DEBUG
     printf("Nafraf: unescaped_tag token: %.*s\n", (int)(tok.len), tok.s);
     printf("Nafraf tok.s[0]= %c tok.s[1]= %c\n", tok.s[0], tok.s[1]);
     #endif
 
-    if(tok.s[0] == 'w' && tok.s[1] == '\'') {
-      #ifdef DEBUG
-      printf("Nafraf: wildcard in TAG: %.*s\n", (int)(te - (ts + 4)), ts + 4);
-      #endif
-      int is_attr = (*(ts + 4) == '$') ? 1 : 0;
-      tok.type = is_attr ? QT_PARAM_WILDCARD : QT_WILDCARD;
-      tok.len = te - (ts + 6 + is_attr);
-      tok.s = ts + 4 + is_attr;
-      tok.pos = tok.s - q->raw;
-      tok.numval = 0;
-      #ifdef DEBUG
-      printf("Nafraf: wildcard: %.*s\n", (int)tok.len, tok.s);
-      #endif
-      RSQuery_Parse_v3(pParser, WILDCARD, tok, q);
-    } else {
-      tok.len = te - (ts + 3);
-      tok.s = ts + 2;
-      tok.numval = 0;
-      tok.pos = tok.s - q->raw;
-      tok.type = QT_TERM;
-      #ifdef DEBUG
-      printf("Nafraf: unescaped tag: %.*s\n", (int)tok.len, tok.s);
-      #endif
-      RSQuery_Parse_v3(pParser, UNESCAPED_TAG, tok, q);
-    }
     if (!QPCTX_ISOK(q)) {
       fbreak;
     }
 
     tok.len = 1;
     tok.s = te - 1;
-    tok.numval = 0;
     tok.pos = tok.s - q->raw;
-    #ifdef DEBUG
-    printf("Nafraf: RB: %.*s\n", (int)(tok.len), tok.s);
-    #endif
+    RSQuery_Parse_v3(pParser, RB, tok, q);
+    if (!QPCTX_ISOK(q)) {
+      fbreak;
+    }
+
+  };
+
+  wildcard_tag => {
+    tok.numval = 0;
+    tok.len = 1;
+    tok.s = ts;
+    RSQuery_Parse_v3(pParser, COLON, tok, q);
+    if (!QPCTX_ISOK(q)) {
+      fbreak;
+    }
+
+    tok.s = ts + 1;
+    tok.pos = tok.s - q->raw;
+    RSQuery_Parse_v3(pParser, LB, tok, q);
+    if (!QPCTX_ISOK(q)) {
+      fbreak;
+    }
+
+    int is_attr = (*(ts + 4) == '$') ? 1 : 0;
+    tok.type = is_attr ? QT_PARAM_WILDCARD : QT_WILDCARD;
+    tok.len = te - (ts + 6 + is_attr);
+    tok.s = ts + 4 + is_attr;
+    tok.pos = tok.s - q->raw;
+    RSQuery_Parse_v3(pParser, WILDCARD, tok, q);
+    if (!QPCTX_ISOK(q)) {
+      fbreak;
+    }
+
+    tok.len = 1;
+    tok.s = te - 1;
+    tok.pos = tok.s - q->raw;
     RSQuery_Parse_v3(pParser, RB, tok, q);
     if (!QPCTX_ISOK(q)) {
       fbreak;
@@ -471,6 +474,7 @@ main := |*
   };
 
   suffix_tag => {
+    tok.numval = 0;
     tok.len = 1;
     tok.s = ts;
     #ifdef DEBUG
@@ -482,9 +486,7 @@ main := |*
       fbreak;
     }
 
-    tok.len = 1;
     tok.s = ts + 1;
-    tok.numval = 0;
     tok.pos = tok.s - q->raw;
     #ifdef DEBUG
     printf("Nafraf: LB: %.*s\n", (int)(tok.len), tok.s);
@@ -498,9 +500,7 @@ main := |*
     tok.type = is_attr ? QT_PARAM_TERM : QT_TERM;
     tok.len = te - (ts + 3 + is_attr) - 1;
     tok.s = ts + 3 + is_attr;
-    tok.numval = 0;
     tok.pos = tok.s - q->raw;
-
     // Invalid case: wildcard and suffix
     if(tok.s[0] == 'w' && tok.s[1] == '\'') {
       fbreak;
@@ -516,7 +516,6 @@ main := |*
 
     tok.len = 1;
     tok.s = te - 1;
-    tok.numval = 0;
     tok.pos = tok.s - q->raw;
     #ifdef DEBUG
     printf("Nafraf: RB: %.*s\n", (int)(tok.len), tok.s);
@@ -528,6 +527,7 @@ main := |*
   };
 
   prefix_tag => {
+    tok.numval = 0;
     tok.len = 1;
     tok.s = ts;
     #ifdef DEBUG
@@ -539,9 +539,7 @@ main := |*
       fbreak;
     }
 
-    tok.len = 1;
     tok.s = ts + 1;
-    tok.numval = 0;
     tok.pos = tok.s - q->raw;
     #ifdef DEBUG
     printf("Nafraf: LB: %.*s\n", (int)(tok.len), tok.s);
@@ -555,9 +553,7 @@ main := |*
     tok.type = is_attr ? QT_PARAM_TERM : QT_TERM;
     tok.len = te - (ts + 2 + is_attr) - 2;
     tok.s = ts + 2 + is_attr;
-    tok.numval = 0;
     tok.pos = tok.s - q->raw;
-
     // Invalid case: wildcard and prefix
     if(tok.s[0] == 'w' && tok.s[1] == '\'') {
       fbreak;
@@ -573,7 +569,6 @@ main := |*
 
     tok.len = 1;
     tok.s = te - 1;
-    tok.numval = 0;
     tok.pos = tok.s - q->raw;
     #ifdef DEBUG
     printf("Nafraf: RB: %.*s\n", (int)(tok.len), tok.s);
@@ -585,6 +580,7 @@ main := |*
   };
 
   contains_tag => {
+    tok.numval = 0;
     tok.len = 1;
     tok.s = ts;
     #ifdef DEBUG
@@ -596,9 +592,7 @@ main := |*
       fbreak;
     }
 
-    tok.len = 1;
     tok.s = ts + 2;
-    tok.numval = 0;
     tok.pos = tok.s - q->raw;
     #ifdef DEBUG
     printf("Nafraf: LB: %.*s\n", (int)(tok.len), tok.s);
@@ -612,14 +606,11 @@ main := |*
     tok.type = is_attr ? QT_PARAM_TERM : QT_TERM;
     tok.len = te - (ts + 3 + is_attr) - 2;
     tok.s = ts + 3 + is_attr;
-    tok.numval = 0;
     tok.pos = tok.s - q->raw;
-
     // Invalid case: wildcard and contains
     if(tok.s[0] == 'w' && tok.s[1] == '\'') {
       fbreak;
     }
-
     #ifdef DEBUG
     printf("Nafraf: is_attr %d char:%c\n", is_attr, *(ts + 3));
     printf("Nafraf: contains_tag: %.*s\n", (int)tok.len, tok.s);
@@ -631,7 +622,6 @@ main := |*
 
     tok.len = 1;
     tok.s = te - 1;
-    tok.numval = 0;
     tok.pos = tok.s - q->raw;
     #ifdef DEBUG
     printf("Nafraf: RB: %.*s\n", (int)(tok.len), tok.s);
@@ -659,7 +649,7 @@ main := |*
   };
 
   suffix => {
-    int is_attr = (*(ts+1) == '$') ? 1 : 0;
+    int is_attr = (*(ts + 1) == '$') ? 1 : 0;
     tok.type = is_attr ? QT_PARAM_TERM : QT_TERM;
     tok.len = te - (ts + 1 + is_attr);
     tok.s = ts + 1 + is_attr;
@@ -673,8 +663,9 @@ main := |*
       fbreak;
     }
   };
+
   contains => {
-    int is_attr = (*(ts+1) == '$') ? 1 : 0;
+    int is_attr = (*(ts + 1) == '$') ? 1 : 0;
     tok.type = is_attr ? QT_PARAM_TERM : QT_TERM;
     tok.len = te - (ts + 2 + is_attr);
     tok.s = ts + 1 + is_attr;
@@ -704,6 +695,7 @@ main := |*
   };
 
   wildcard_txt => {
+    tok.numval = 0;
     tok.len = 1;
     tok.s = ts;
     #ifdef DEBUG
@@ -715,9 +707,7 @@ main := |*
       fbreak;
     }
 
-    tok.len = 1;
     tok.s = ts + 1;
-    tok.numval = 0;
     tok.pos = tok.s - q->raw;
     #ifdef DEBUG
     printf("Nafraf: LP: %.*s\n", (int)(tok.len), tok.s);
@@ -727,8 +717,6 @@ main := |*
       fbreak;
     }
 
-    tok.len = te - (ts + 3);
-    tok.s = ts + 2;
     #ifdef DEBUG
     printf("Nafraf: unescaped_tag token: %.*s\n", (int)(tok.len), tok.s);
     printf("Nafraf tok.s[0]= %c tok.s[1]= %c\n", tok.s[0], tok.s[1]);
@@ -740,7 +728,6 @@ main := |*
     tok.len = te - (ts + 6 + is_attr);
     tok.s = ts + 4 + is_attr;
     tok.pos = tok.s - q->raw;
-    tok.numval = 0;
     #ifdef DEBUG
     printf("Nafraf: wildcard: %.*s\n", (int)tok.len, tok.s);
     #endif
@@ -751,7 +738,6 @@ main := |*
 
     tok.len = 1;
     tok.s = te - 1;
-    tok.numval = 0;
     tok.pos = tok.s - q->raw;
     #ifdef DEBUG
     printf("Nafraf: RP: %.*s\n", (int)(tok.len), tok.s);
