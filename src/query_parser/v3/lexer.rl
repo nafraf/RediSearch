@@ -323,6 +323,7 @@ main := |*
   };
 
   unescaped_tag => {
+    tok.numval = 0;
     tok.len = 1;
     tok.s = ts;
     #ifdef DEBUG
@@ -348,20 +349,26 @@ main := |*
     tok.s = ts + 2;
     #ifdef DEBUG
     printf("Nafraf: unescaped_tag token: %.*s\n", (int)(tok.len), tok.s);
-    printf("Nafraf tok.s[0]= %c tok.s[1]= %c tok.s[tok.len-1]= %c\n", tok.s[0], tok.s[1], tok.s[tok.len-1]);
+    printf("Nafraf tok.s[0]= %c tok.s[1]= %c tok.s[tok.len-1]= %c tok.len=%d\n", tok.s[0], tok.s[1], tok.s[tok.len-1], tok.len);
     #endif
 
-    if(tok.s[0] == 'w' && tok.s[1] == '\'' && tok.s[tok.len-1] == '\'') {
-      int is_attr = (*(ts + 4) == '$') ? 1 : 0;
-      tok.type = is_attr ? QT_PARAM_WILDCARD : QT_WILDCARD;
-      tok.len = te - (ts + 6 + is_attr);
-      tok.s = ts + 4 + is_attr;
-      tok.pos = tok.s - q->raw;
-      #ifdef DEBUG
-      printf("Nafraf: wildcard: %.*s\n", (int)tok.len, tok.s);
-      #endif
-      RSQuery_Parse_v3(pParser, WILDCARD, tok, q);
-    } else {
+    bool parsed = false;
+    if(tok.len > 3) {
+      if(tok.s[0] == 'w' && tok.s[1] == '\'' && tok.s[tok.len - 1] == '\'') {
+        int is_attr = (*(ts + 4) == '$') ? 1 : 0;
+        tok.type = is_attr ? QT_PARAM_WILDCARD : QT_WILDCARD;
+        tok.len = te - (ts + 6 + is_attr);
+        tok.s = ts + 4 + is_attr;
+        tok.pos = tok.s - q->raw;
+        #ifdef DEBUG
+        printf("Nafraf: wildcard: %.*s\n", (int)tok.len, tok.s);
+        #endif
+        RSQuery_Parse_v3(pParser, WILDCARD, tok, q);
+        parsed = true;
+      }
+    }
+
+    if(!parsed) {
       // if (tok.s[0] == '\'' && tok.s[1] == 'w') {
       //   tok.len--;
       //   tok.s++;
@@ -372,7 +379,7 @@ main := |*
         tok.len--;
       }
       // remove trailing spaces
-      while(tok.len > 1 && isspace(tok.s[tok.len-1])) {
+      while(tok.len > 1 && isspace(tok.s[tok.len - 1])) {
         tok.len--;
       }
       tok.pos = tok.s - q->raw;
@@ -396,7 +403,6 @@ main := |*
     if (!QPCTX_ISOK(q)) {
       fbreak;
     }
-
   };
 
   unescaped_tag2 => {
@@ -443,7 +449,6 @@ main := |*
     if (!QPCTX_ISOK(q)) {
       fbreak;
     }
-
   };
 
   wildcard_tag => {
@@ -479,7 +484,6 @@ main := |*
     if (!QPCTX_ISOK(q)) {
       fbreak;
     }
-
   };
 
   suffix_tag => {
@@ -513,6 +517,15 @@ main := |*
     // Invalid case: wildcard and suffix
     if(tok.s[0] == 'w' && tok.s[1] == '\'') {
       fbreak;
+    }
+    // remove leading spaces
+    while(tok.len && isspace(tok.s[0])) {
+      tok.s++;
+      tok.len--;
+    }
+    // remove trailing spaces
+    while(tok.len > 1 && isspace(tok.s[tok.len - 1])) {
+      tok.len--;
     }
     #ifdef DEBUG
     printf("Nafraf: is_attr %d char:%c\n", is_attr, *(ts + 3));
@@ -572,6 +585,10 @@ main := |*
       tok.s++;
       tok.len--;
     }
+    // remove trailing spaces
+    while(tok.len > 1 && isspace(tok.s[tok.len - 1])) {
+      tok.len--;
+    }
     #ifdef DEBUG
     printf("Nafraf: is_attr %d char:%c\n", is_attr, *(ts + 2));
     printf("Nafraf: prefix_tag: [%.*s]\n", (int)tok.len, tok.s);
@@ -624,6 +641,15 @@ main := |*
     // Invalid case: wildcard and contains
     if(tok.s[0] == 'w' && tok.s[1] == '\'') {
       fbreak;
+    }
+    // remove leading spaces
+    while(tok.len && isspace(tok.s[0])) {
+      tok.s++;
+      tok.len--;
+    }
+    // remove trailing spaces
+    while(tok.len > 1 && isspace(tok.s[tok.len - 1])) {
+      tok.len--;
     }
     #ifdef DEBUG
     printf("Nafraf: is_attr %d char:%c\n", is_attr, *(ts + 3));
@@ -760,7 +786,6 @@ main := |*
     if (!QPCTX_ISOK(q)) {
       fbreak;
     }
-
   };
 
 *|;
