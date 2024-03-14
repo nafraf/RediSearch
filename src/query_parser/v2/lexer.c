@@ -28,7 +28,7 @@ void *RSQuery_ParseAlloc_v2(void *(*mallocProc)(size_t));
 void RSQuery_ParseFree_v2(void *p, void (*freeProc)(void *));
 
 
-/* #line 654 "lexer.rl" */
+/* #line 653 "lexer.rl" */
 
 
 
@@ -58,14 +58,14 @@ static const short _query_key_offsets[] = {
 	0, 10, 20, 22, 22, 25, 28, 38, 
 	49, 51, 53, 56, 58, 59, 60, 62, 
 	65, 67, 68, 69, 71, 73, 74, 74, 
-	84, 93, 94, 104, 113, 122, 123, 133, 
-	144, 154, 163, 173, 183, 193, 195, 196, 
-	196, 205, 215, 225, 235, 245, 247, 248, 
-	248, 257, 260, 270, 280, 282, 284, 284, 
-	326, 338, 349, 361, 364, 366, 381, 393, 
-	399, 404, 407, 424, 437, 438, 441, 447, 
-	452, 455, 472, 487, 501, 503, 505, 507, 
-	508, 519, 533, 543, 556, 569
+	84, 94, 95, 105, 114, 124, 125, 135, 
+	146, 156, 166, 176, 187, 198, 200, 201, 
+	201, 211, 221, 232, 243, 254, 256, 257, 
+	257, 267, 270, 280, 290, 292, 294, 294, 
+	336, 348, 359, 371, 374, 376, 391, 403, 
+	409, 414, 417, 434, 447, 448, 451, 457, 
+	462, 465, 482, 497, 511, 513, 515, 517, 
+	518, 529, 543, 553, 566, 579
 };
 
 static const char _query_trans_keys[] = {
@@ -79,79 +79,81 @@ static const char _query_trans_keys[] = {
 	48, 57, 110, 102, 48, 57, 45, 48, 
 	57, 48, 57, 119, 39, 39, 92, 39, 
 	92, 41, 36, 42, 44, 92, 119, 127, 
-	0, 32, 124, 125, 36, 42, 44, 92, 
-	124, 125, 127, 0, 32, 125, 9, 13, 
+	0, 32, 123, 125, 36, 42, 44, 92, 
+	125, 127, 0, 32, 123, 124, 125, 9, 
+	13, 32, 47, 58, 64, 91, 96, 123, 
+	126, 36, 42, 44, 92, 127, 0, 32, 
+	123, 125, 36, 42, 44, 92, 125, 127, 
+	0, 32, 123, 124, 125, 9, 13, 32, 
+	47, 58, 64, 91, 96, 123, 126, 119, 
+	9, 13, 32, 47, 58, 64, 91, 96, 
+	123, 126, 36, 39, 42, 44, 92, 127, 
+	0, 32, 123, 125, 36, 42, 44, 92, 
+	125, 127, 0, 32, 123, 124, 9, 13, 
 	32, 47, 58, 64, 91, 96, 123, 126, 
-	36, 42, 44, 92, 127, 0, 32, 124, 
-	125, 36, 42, 44, 92, 124, 125, 127, 
-	0, 32, 125, 9, 13, 32, 47, 58, 
-	64, 91, 96, 123, 126, 119, 9, 13, 
-	32, 47, 58, 64, 91, 96, 123, 126, 
-	36, 39, 42, 44, 92, 127, 0, 32, 
-	124, 125, 36, 42, 44, 92, 124, 125, 
-	127, 0, 32, 9, 13, 32, 47, 58, 
+	36, 39, 42, 44, 92, 125, 127, 0, 
+	32, 123, 124, 36, 39, 42, 44, 92, 
+	125, 127, 0, 32, 123, 124, 39, 92, 
+	125, 36, 42, 44, 92, 125, 127, 0, 
+	32, 123, 124, 9, 13, 32, 47, 58, 
 	64, 91, 96, 123, 126, 36, 39, 42, 
-	44, 92, 124, 125, 127, 0, 32, 36, 
-	39, 42, 44, 92, 124, 125, 127, 0, 
-	32, 39, 92, 125, 36, 42, 44, 92, 
-	124, 125, 127, 0, 32, 9, 13, 32, 
-	47, 58, 64, 91, 96, 123, 126, 36, 
-	39, 42, 44, 92, 124, 125, 127, 0, 
-	32, 36, 39, 42, 44, 92, 124, 125, 
-	127, 0, 32, 36, 39, 42, 44, 92, 
-	124, 125, 127, 0, 32, 39, 92, 125, 
-	36, 42, 44, 92, 124, 125, 127, 0, 
-	32, 39, 92, 125, 9, 13, 32, 47, 
-	58, 64, 91, 96, 123, 126, 9, 13, 
+	44, 92, 125, 127, 0, 32, 123, 124, 
+	36, 39, 42, 44, 92, 125, 127, 0, 
+	32, 123, 124, 36, 39, 42, 44, 92, 
+	125, 127, 0, 32, 123, 124, 39, 92, 
+	125, 36, 42, 44, 92, 125, 127, 0, 
+	32, 123, 124, 39, 92, 125, 9, 13, 
 	32, 47, 58, 64, 91, 96, 123, 126, 
-	39, 92, 39, 92, 32, 34, 36, 37, 
-	39, 40, 41, 42, 43, 45, 58, 59, 
-	61, 63, 64, 65, 91, 92, 93, 95, 
-	97, 105, 119, 123, 124, 125, 126, 127, 
-	0, 8, 9, 13, 14, 31, 33, 47, 
-	48, 57, 60, 62, 94, 96, 42, 64, 
-	92, 96, 0, 47, 58, 62, 91, 94, 
-	123, 127, 64, 92, 96, 0, 47, 58, 
-	62, 91, 94, 123, 127, 42, 64, 92, 
-	96, 0, 47, 58, 62, 91, 94, 123, 
-	127, 39, 92, 105, 39, 92, 36, 45, 
-	64, 92, 96, 0, 47, 48, 57, 58, 
-	62, 91, 94, 123, 127, 42, 64, 92, 
-	96, 0, 47, 58, 62, 91, 94, 123, 
-	127, 42, 46, 69, 101, 48, 57, 42, 
-	69, 101, 48, 57, 42, 48, 57, 42, 
-	46, 64, 69, 92, 96, 101, 0, 47, 
-	48, 57, 58, 62, 91, 94, 123, 127, 
-	42, 45, 64, 92, 96, 0, 47, 58, 
-	62, 91, 94, 123, 127, 105, 105, 48, 
-	57, 42, 46, 69, 101, 48, 57, 42, 
-	69, 101, 48, 57, 42, 48, 57, 42, 
-	46, 64, 69, 92, 96, 101, 0, 47, 
-	48, 57, 58, 62, 91, 94, 123, 127, 
-	42, 45, 64, 92, 96, 0, 47, 48, 
-	57, 58, 62, 91, 94, 123, 127, 42, 
-	64, 92, 96, 0, 47, 48, 57, 58, 
-	62, 91, 94, 123, 127, 40, 123, 39, 
-	92, 39, 92, 62, 64, 92, 96, 0, 
+	9, 13, 32, 47, 58, 64, 91, 96, 
+	123, 126, 39, 92, 39, 92, 32, 34, 
+	36, 37, 39, 40, 41, 42, 43, 45, 
+	58, 59, 61, 63, 64, 65, 91, 92, 
+	93, 95, 97, 105, 119, 123, 124, 125, 
+	126, 127, 0, 8, 9, 13, 14, 31, 
+	33, 47, 48, 57, 60, 62, 94, 96, 
+	42, 64, 92, 96, 0, 47, 58, 62, 
+	91, 94, 123, 127, 64, 92, 96, 0, 
 	47, 58, 62, 91, 94, 123, 127, 42, 
-	64, 83, 92, 96, 115, 0, 47, 58, 
-	62, 91, 94, 123, 127, 9, 13, 32, 
-	47, 58, 64, 91, 96, 123, 126, 42, 
-	64, 92, 96, 110, 0, 47, 58, 62, 
-	91, 94, 123, 127, 42, 64, 92, 96, 
-	102, 0, 47, 58, 62, 91, 94, 123, 
-	127, 39, 42, 64, 92, 96, 0, 47, 
-	58, 62, 91, 94, 123, 127, 0
+	64, 92, 96, 0, 47, 58, 62, 91, 
+	94, 123, 127, 39, 92, 105, 39, 92, 
+	36, 45, 64, 92, 96, 0, 47, 48, 
+	57, 58, 62, 91, 94, 123, 127, 42, 
+	64, 92, 96, 0, 47, 58, 62, 91, 
+	94, 123, 127, 42, 46, 69, 101, 48, 
+	57, 42, 69, 101, 48, 57, 42, 48, 
+	57, 42, 46, 64, 69, 92, 96, 101, 
+	0, 47, 48, 57, 58, 62, 91, 94, 
+	123, 127, 42, 45, 64, 92, 96, 0, 
+	47, 58, 62, 91, 94, 123, 127, 105, 
+	105, 48, 57, 42, 46, 69, 101, 48, 
+	57, 42, 69, 101, 48, 57, 42, 48, 
+	57, 42, 46, 64, 69, 92, 96, 101, 
+	0, 47, 48, 57, 58, 62, 91, 94, 
+	123, 127, 42, 45, 64, 92, 96, 0, 
+	47, 48, 57, 58, 62, 91, 94, 123, 
+	127, 42, 64, 92, 96, 0, 47, 48, 
+	57, 58, 62, 91, 94, 123, 127, 40, 
+	123, 39, 92, 39, 92, 62, 64, 92, 
+	96, 0, 47, 58, 62, 91, 94, 123, 
+	127, 42, 64, 83, 92, 96, 115, 0, 
+	47, 58, 62, 91, 94, 123, 127, 9, 
+	13, 32, 47, 58, 64, 91, 96, 123, 
+	126, 42, 64, 92, 96, 110, 0, 47, 
+	58, 62, 91, 94, 123, 127, 42, 64, 
+	92, 96, 102, 0, 47, 58, 62, 91, 
+	94, 123, 127, 39, 42, 64, 92, 96, 
+	0, 47, 58, 62, 91, 94, 123, 127, 
+	0
 };
 
 static const char _query_single_lengths[] = {
 	0, 0, 2, 0, 3, 3, 0, 3, 
 	0, 0, 1, 0, 1, 1, 0, 1, 
 	0, 1, 1, 2, 2, 1, 0, 6, 
-	7, 1, 0, 5, 7, 1, 0, 1, 
-	6, 7, 0, 8, 8, 2, 1, 0, 
-	7, 0, 8, 8, 8, 2, 1, 0, 
-	7, 3, 0, 0, 2, 2, 0, 28, 
+	6, 1, 0, 5, 6, 1, 0, 1, 
+	6, 6, 0, 7, 7, 2, 1, 0, 
+	6, 0, 7, 7, 7, 2, 1, 0, 
+	6, 3, 0, 0, 2, 2, 0, 28, 
 	4, 3, 4, 3, 2, 5, 4, 4, 
 	3, 1, 7, 5, 1, 1, 4, 3, 
 	1, 7, 5, 4, 2, 2, 2, 1, 
@@ -162,10 +164,10 @@ static const char _query_range_lengths[] = {
 	5, 5, 0, 0, 0, 0, 5, 4, 
 	1, 1, 1, 1, 0, 0, 1, 1, 
 	1, 0, 0, 0, 0, 0, 0, 2, 
-	1, 0, 5, 2, 1, 0, 5, 5, 
-	2, 1, 5, 1, 1, 0, 0, 0, 
-	1, 5, 1, 1, 1, 0, 0, 0, 
-	1, 0, 5, 5, 0, 0, 0, 7, 
+	2, 0, 5, 2, 2, 0, 5, 5, 
+	2, 2, 5, 2, 2, 0, 0, 0, 
+	2, 5, 2, 2, 2, 0, 0, 0, 
+	2, 0, 5, 5, 0, 0, 0, 7, 
 	4, 4, 4, 0, 0, 5, 4, 1, 
 	1, 1, 5, 4, 0, 1, 1, 1, 
 	1, 5, 5, 5, 0, 0, 0, 0, 
@@ -197,26 +199,26 @@ static const unsigned char _query_indicies[] = {
 	22, 0, 24, 23, 25, 23, 23, 27, 
 	26, 28, 27, 26, 29, 23, 26, 23, 
 	31, 23, 32, 33, 23, 23, 23, 30, 
-	23, 34, 23, 35, 23, 36, 23, 23, 
+	23, 34, 23, 35, 36, 23, 23, 23, 
 	30, 37, 23, 30, 30, 30, 30, 30, 
 	23, 23, 23, 23, 39, 23, 23, 23, 
-	38, 23, 40, 23, 39, 23, 41, 23, 
+	38, 23, 40, 23, 39, 41, 23, 23, 
 	23, 38, 42, 23, 38, 38, 38, 38, 
 	38, 23, 43, 30, 30, 30, 30, 30, 
 	23, 23, 45, 23, 23, 46, 23, 23, 
-	23, 44, 23, 23, 23, 46, 23, 47, 
+	23, 44, 23, 23, 23, 46, 47, 23, 
 	23, 23, 44, 44, 44, 44, 44, 44, 
-	23, 49, 44, 49, 49, 50, 49, 51, 
+	23, 49, 44, 49, 49, 50, 51, 49, 
 	49, 49, 48, 49, 52, 49, 49, 50, 
-	49, 51, 49, 49, 48, 53, 54, 49, 
-	36, 0, 49, 23, 23, 23, 46, 23, 
-	36, 23, 23, 44, 48, 48, 48, 48, 
-	48, 49, 23, 55, 34, 23, 35, 23, 
-	36, 23, 23, 30, 57, 30, 58, 57, 
-	59, 57, 60, 57, 57, 56, 57, 61, 
-	58, 57, 59, 57, 60, 57, 57, 56, 
+	51, 49, 49, 49, 48, 53, 54, 49, 
+	36, 0, 49, 23, 23, 23, 46, 36, 
+	23, 23, 23, 44, 48, 48, 48, 48, 
+	48, 49, 23, 55, 34, 23, 35, 36, 
+	23, 23, 23, 30, 57, 30, 58, 57, 
+	59, 60, 57, 57, 57, 56, 57, 61, 
+	58, 57, 59, 60, 57, 57, 57, 56, 
 	62, 63, 57, 64, 0, 57, 23, 34, 
-	23, 35, 23, 36, 23, 23, 30, 62, 
+	23, 35, 36, 23, 23, 23, 30, 62, 
 	63, 65, 57, 56, 56, 56, 56, 56, 
 	57, 66, 66, 66, 66, 66, 0, 67, 
 	69, 68, 70, 69, 68, 68, 72, 74, 
@@ -342,7 +344,7 @@ static const int query_error = -1;
 static const int query_en_main = 55;
 
 
-/* #line 657 "lexer.rl" */
+/* #line 656 "lexer.rl" */
 
 QueryNode *RSQuery_ParseRaw_v2(QueryParseCtx *q) {
   void *pParser = RSQuery_ParseAlloc_v2(rm_malloc);
@@ -352,7 +354,7 @@ QueryNode *RSQuery_ParseRaw_v2(QueryParseCtx *q) {
   const char* ts = q->raw;
   const char* te = q->raw + q->len;
   
-/* #line 356 "lexer.c" */
+/* #line 358 "lexer.c" */
 	{
 	cs = query_start;
 	ts = 0;
@@ -360,7 +362,7 @@ QueryNode *RSQuery_ParseRaw_v2(QueryParseCtx *q) {
 	act = 0;
 	}
 
-/* #line 666 "lexer.rl" */
+/* #line 665 "lexer.rl" */
   QueryToken tok = {.len = 0, .pos = 0, .s = 0};
   
   //parseCtx ctx = {.root = NULL, .ok = 1, .errorMsg = NULL, .q = q};
@@ -369,7 +371,7 @@ QueryNode *RSQuery_ParseRaw_v2(QueryParseCtx *q) {
   const char* eof = pe;
   
   
-/* #line 373 "lexer.c" */
+/* #line 375 "lexer.c" */
 	{
 	int _klen;
 	unsigned int _trans;
@@ -388,7 +390,7 @@ _resume:
 /* #line 1 "NONE" */
 	{ts = p;}
 	break;
-/* #line 392 "lexer.c" */
+/* #line 394 "lexer.c" */
 		}
 	}
 
@@ -459,67 +461,67 @@ _eof_trans:
 	{te = p+1;}
 	break;
 	case 3:
-/* #line 93 "lexer.rl" */
+/* #line 92 "lexer.rl" */
 	{act = 1;}
 	break;
 	case 4:
-/* #line 104 "lexer.rl" */
+/* #line 103 "lexer.rl" */
 	{act = 2;}
 	break;
 	case 5:
-/* #line 115 "lexer.rl" */
+/* #line 114 "lexer.rl" */
 	{act = 3;}
 	break;
 	case 6:
-/* #line 124 "lexer.rl" */
+/* #line 123 "lexer.rl" */
 	{act = 4;}
 	break;
 	case 7:
-/* #line 142 "lexer.rl" */
+/* #line 141 "lexer.rl" */
 	{act = 6;}
 	break;
 	case 8:
-/* #line 151 "lexer.rl" */
+/* #line 150 "lexer.rl" */
 	{act = 7;}
 	break;
 	case 9:
-/* #line 205 "lexer.rl" */
+/* #line 204 "lexer.rl" */
 	{act = 14;}
 	break;
 	case 10:
-/* #line 220 "lexer.rl" */
+/* #line 219 "lexer.rl" */
 	{act = 16;}
 	break;
 	case 11:
-/* #line 234 "lexer.rl" */
+/* #line 233 "lexer.rl" */
 	{act = 18;}
 	break;
 	case 12:
-/* #line 263 "lexer.rl" */
+/* #line 262 "lexer.rl" */
 	{act = 23;}
 	break;
 	case 13:
-/* #line 266 "lexer.rl" */
+/* #line 265 "lexer.rl" */
 	{act = 25;}
 	break;
 	case 14:
-/* #line 277 "lexer.rl" */
+/* #line 276 "lexer.rl" */
 	{act = 26;}
 	break;
 	case 15:
-/* #line 336 "lexer.rl" */
+/* #line 335 "lexer.rl" */
 	{act = 27;}
 	break;
 	case 16:
-/* #line 454 "lexer.rl" */
+/* #line 453 "lexer.rl" */
 	{act = 30;}
 	break;
 	case 17:
-/* #line 564 "lexer.rl" */
+/* #line 563 "lexer.rl" */
 	{act = 33;}
 	break;
 	case 18:
-/* #line 133 "lexer.rl" */
+/* #line 132 "lexer.rl" */
 	{te = p+1;{
     tok.pos = ts-q->raw;
     tok.len = te - ts;
@@ -531,7 +533,7 @@ _eof_trans:
   }}
 	break;
 	case 19:
-/* #line 151 "lexer.rl" */
+/* #line 150 "lexer.rl" */
 	{te = p+1;{ 
     tok.pos = ts-q->raw;
     tok.s = ts;
@@ -544,7 +546,7 @@ _eof_trans:
   }}
 	break;
 	case 20:
-/* #line 162 "lexer.rl" */
+/* #line 161 "lexer.rl" */
 	{te = p+1;{
     tok.pos = ts-q->raw;
     RSQuery_Parse_v2(pParser, QUOTE, tok, q);  
@@ -554,7 +556,7 @@ _eof_trans:
   }}
 	break;
 	case 21:
-/* #line 169 "lexer.rl" */
+/* #line 168 "lexer.rl" */
 	{te = p+1;{ 
     tok.pos = ts-q->raw;
     RSQuery_Parse_v2(pParser, OR, tok, q);
@@ -564,7 +566,7 @@ _eof_trans:
   }}
 	break;
 	case 22:
-/* #line 176 "lexer.rl" */
+/* #line 175 "lexer.rl" */
 	{te = p+1;{ 
     tok.pos = ts-q->raw;
     RSQuery_Parse_v2(pParser, LP, tok, q);
@@ -574,7 +576,7 @@ _eof_trans:
   }}
 	break;
 	case 23:
-/* #line 184 "lexer.rl" */
+/* #line 183 "lexer.rl" */
 	{te = p+1;{ 
     tok.pos = ts-q->raw;
     RSQuery_Parse_v2(pParser, RP, tok, q);
@@ -584,7 +586,7 @@ _eof_trans:
   }}
 	break;
 	case 24:
-/* #line 191 "lexer.rl" */
+/* #line 190 "lexer.rl" */
 	{te = p+1;{ 
     tok.pos = ts-q->raw;
     RSQuery_Parse_v2(pParser, LB, tok, q);
@@ -594,7 +596,7 @@ _eof_trans:
   }}
 	break;
 	case 25:
-/* #line 198 "lexer.rl" */
+/* #line 197 "lexer.rl" */
 	{te = p+1;{ 
     tok.pos = ts-q->raw;
     RSQuery_Parse_v2(pParser, RB, tok, q);
@@ -604,7 +606,7 @@ _eof_trans:
   }}
 	break;
 	case 26:
-/* #line 212 "lexer.rl" */
+/* #line 211 "lexer.rl" */
 	{te = p+1;{ 
      tok.pos = ts-q->raw;
      RSQuery_Parse_v2(pParser, SEMICOLON, tok, q);
@@ -614,7 +616,7 @@ _eof_trans:
    }}
 	break;
 	case 27:
-/* #line 227 "lexer.rl" */
+/* #line 226 "lexer.rl" */
 	{te = p+1;{ 
     tok.pos = ts-q->raw;
     RSQuery_Parse_v2(pParser, TILDE, tok, q);  
@@ -624,7 +626,7 @@ _eof_trans:
   }}
 	break;
 	case 28:
-/* #line 241 "lexer.rl" */
+/* #line 240 "lexer.rl" */
 	{te = p+1;{
     tok.pos = ts-q->raw;
     RSQuery_Parse_v2(pParser, PERCENT, tok, q);
@@ -634,7 +636,7 @@ _eof_trans:
   }}
 	break;
 	case 29:
-/* #line 248 "lexer.rl" */
+/* #line 247 "lexer.rl" */
 	{te = p+1;{ 
     tok.pos = ts-q->raw;
     RSQuery_Parse_v2(pParser, LSQB, tok, q);  
@@ -644,7 +646,7 @@ _eof_trans:
   }}
 	break;
 	case 30:
-/* #line 255 "lexer.rl" */
+/* #line 254 "lexer.rl" */
 	{te = p+1;{ 
     tok.pos = ts-q->raw;
     RSQuery_Parse_v2(pParser, RSQB, tok, q);   
@@ -654,19 +656,19 @@ _eof_trans:
   }}
 	break;
 	case 31:
-/* #line 262 "lexer.rl" */
+/* #line 261 "lexer.rl" */
 	{te = p+1;}
 	break;
 	case 32:
-/* #line 263 "lexer.rl" */
+/* #line 262 "lexer.rl" */
 	{te = p+1;}
 	break;
 	case 33:
-/* #line 264 "lexer.rl" */
+/* #line 263 "lexer.rl" */
 	{te = p+1;}
 	break;
 	case 34:
-/* #line 277 "lexer.rl" */
+/* #line 276 "lexer.rl" */
 	{te = p+1;{
     tok.numval = 0;
     tok.len = 1;
@@ -727,7 +729,7 @@ _eof_trans:
   }}
 	break;
 	case 35:
-/* #line 336 "lexer.rl" */
+/* #line 335 "lexer.rl" */
 	{te = p+1;{
     tok.numval = 0;
     tok.len = 1;
@@ -764,7 +766,7 @@ _eof_trans:
   }}
 	break;
 	case 36:
-/* #line 371 "lexer.rl" */
+/* #line 370 "lexer.rl" */
 	{te = p+1;{
     tok.numval = 0;
     tok.len = 1;
@@ -801,7 +803,7 @@ _eof_trans:
   }}
 	break;
 	case 37:
-/* #line 406 "lexer.rl" */
+/* #line 405 "lexer.rl" */
 	{te = p+1;{
     tok.numval = 0;
     tok.len = 1;
@@ -851,7 +853,7 @@ _eof_trans:
   }}
 	break;
 	case 38:
-/* #line 454 "lexer.rl" */
+/* #line 453 "lexer.rl" */
 	{te = p+1;{
     tok.numval = 0;
     tok.len = 1;
@@ -901,7 +903,7 @@ _eof_trans:
   }}
 	break;
 	case 39:
-/* #line 502 "lexer.rl" */
+/* #line 501 "lexer.rl" */
 	{te = p+1;{
     tok.numval = 0;
     tok.len = 1;
@@ -951,7 +953,7 @@ _eof_trans:
   }}
 	break;
 	case 40:
-/* #line 550 "lexer.rl" */
+/* #line 549 "lexer.rl" */
 	{te = p+1;{
     int is_attr = (*ts == '$') ? 1 : 0;
     tok.type = is_attr ? QT_PARAM_TERM : QT_TERM;
@@ -968,7 +970,7 @@ _eof_trans:
   }}
 	break;
 	case 41:
-/* #line 578 "lexer.rl" */
+/* #line 577 "lexer.rl" */
 	{te = p+1;{
     int is_attr = (*(ts+1) == '$') ? 1 : 0;
     tok.type = is_attr ? QT_PARAM_TERM : QT_TERM;
@@ -985,7 +987,7 @@ _eof_trans:
   }}
 	break;
 	case 42:
-/* #line 593 "lexer.rl" */
+/* #line 592 "lexer.rl" */
 	{te = p+1;{
     int is_attr = (*(ts+2) == '$') ? 1 : 0;
     tok.type = is_attr ? QT_PARAM_TERM : QT_TERM;
@@ -1000,7 +1002,7 @@ _eof_trans:
   }}
 	break;
 	case 43:
-/* #line 606 "lexer.rl" */
+/* #line 605 "lexer.rl" */
 	{te = p+1;{
     tok.numval = 0;
     tok.len = 1;
@@ -1037,7 +1039,7 @@ _eof_trans:
   }}
 	break;
 	case 44:
-/* #line 641 "lexer.rl" */
+/* #line 640 "lexer.rl" */
 	{te = p+1;{
     int is_attr = (*(ts+2) == '$') ? 1 : 0;
     tok.type = is_attr ? QT_PARAM_WILDCARD : QT_WILDCARD;
@@ -1052,7 +1054,7 @@ _eof_trans:
   }}
 	break;
 	case 45:
-/* #line 93 "lexer.rl" */
+/* #line 92 "lexer.rl" */
 	{te = p;p--;{ 
     tok.s = ts;
     tok.len = te-ts;
@@ -1066,7 +1068,7 @@ _eof_trans:
   }}
 	break;
 	case 46:
-/* #line 104 "lexer.rl" */
+/* #line 103 "lexer.rl" */
 	{te = p;p--;{ 
     tok.s = ts;
     tok.len = te-ts;
@@ -1080,7 +1082,7 @@ _eof_trans:
   }}
 	break;
 	case 47:
-/* #line 124 "lexer.rl" */
+/* #line 123 "lexer.rl" */
 	{te = p;p--;{
     tok.pos = ts-q->raw;
     tok.len = te - (ts + 1);
@@ -1092,7 +1094,7 @@ _eof_trans:
   }}
 	break;
 	case 48:
-/* #line 151 "lexer.rl" */
+/* #line 150 "lexer.rl" */
 	{te = p;p--;{ 
     tok.pos = ts-q->raw;
     tok.s = ts;
@@ -1105,7 +1107,7 @@ _eof_trans:
   }}
 	break;
 	case 49:
-/* #line 205 "lexer.rl" */
+/* #line 204 "lexer.rl" */
 	{te = p;p--;{ 
      tok.pos = ts-q->raw;
      RSQuery_Parse_v2(pParser, COLON, tok, q);
@@ -1115,7 +1117,7 @@ _eof_trans:
    }}
 	break;
 	case 50:
-/* #line 220 "lexer.rl" */
+/* #line 219 "lexer.rl" */
 	{te = p;p--;{ 
     tok.pos = ts-q->raw;
     RSQuery_Parse_v2(pParser, MINUS, tok, q);  
@@ -1125,7 +1127,7 @@ _eof_trans:
   }}
 	break;
 	case 51:
-/* #line 234 "lexer.rl" */
+/* #line 233 "lexer.rl" */
 	{te = p;p--;{
     tok.pos = ts-q->raw;
     RSQuery_Parse_v2(pParser, STAR, tok, q);
@@ -1135,11 +1137,11 @@ _eof_trans:
   }}
 	break;
 	case 52:
-/* #line 263 "lexer.rl" */
+/* #line 262 "lexer.rl" */
 	{te = p;p--;}
 	break;
 	case 53:
-/* #line 266 "lexer.rl" */
+/* #line 265 "lexer.rl" */
 	{te = p;p--;{
     tok.len = te-ts;
     tok.s = ts;
@@ -1152,7 +1154,7 @@ _eof_trans:
   }}
 	break;
 	case 54:
-/* #line 336 "lexer.rl" */
+/* #line 335 "lexer.rl" */
 	{te = p;p--;{
     tok.numval = 0;
     tok.len = 1;
@@ -1189,7 +1191,7 @@ _eof_trans:
   }}
 	break;
 	case 55:
-/* #line 564 "lexer.rl" */
+/* #line 563 "lexer.rl" */
 	{te = p;p--;{
     int is_attr = (*(ts+1) == '$') ? 1 : 0;
     tok.type = is_attr ? QT_PARAM_TERM : QT_TERM;
@@ -1206,7 +1208,7 @@ _eof_trans:
   }}
 	break;
 	case 56:
-/* #line 104 "lexer.rl" */
+/* #line 103 "lexer.rl" */
 	{{p = ((te))-1;}{ 
     tok.s = ts;
     tok.len = te-ts;
@@ -1220,7 +1222,7 @@ _eof_trans:
   }}
 	break;
 	case 57:
-/* #line 205 "lexer.rl" */
+/* #line 204 "lexer.rl" */
 	{{p = ((te))-1;}{ 
      tok.pos = ts-q->raw;
      RSQuery_Parse_v2(pParser, COLON, tok, q);
@@ -1230,7 +1232,7 @@ _eof_trans:
    }}
 	break;
 	case 58:
-/* #line 234 "lexer.rl" */
+/* #line 233 "lexer.rl" */
 	{{p = ((te))-1;}{
     tok.pos = ts-q->raw;
     RSQuery_Parse_v2(pParser, STAR, tok, q);
@@ -1240,11 +1242,11 @@ _eof_trans:
   }}
 	break;
 	case 59:
-/* #line 263 "lexer.rl" */
+/* #line 262 "lexer.rl" */
 	{{p = ((te))-1;}}
 	break;
 	case 60:
-/* #line 266 "lexer.rl" */
+/* #line 265 "lexer.rl" */
 	{{p = ((te))-1;}{
     tok.len = te-ts;
     tok.s = ts;
@@ -1257,7 +1259,7 @@ _eof_trans:
   }}
 	break;
 	case 61:
-/* #line 564 "lexer.rl" */
+/* #line 563 "lexer.rl" */
 	{{p = ((te))-1;}{
     int is_attr = (*(ts+1) == '$') ? 1 : 0;
     tok.type = is_attr ? QT_PARAM_TERM : QT_TERM;
@@ -1553,7 +1555,7 @@ _eof_trans:
 	}
 	}
 	break;
-/* #line 1557 "lexer.c" */
+/* #line 1559 "lexer.c" */
 		}
 	}
 
@@ -1566,7 +1568,7 @@ _again:
 /* #line 1 "NONE" */
 	{ts = 0;}
 	break;
-/* #line 1570 "lexer.c" */
+/* #line 1572 "lexer.c" */
 		}
 	}
 
@@ -1584,7 +1586,7 @@ _again:
 	_out: {}
 	}
 
-/* #line 674 "lexer.rl" */
+/* #line 673 "lexer.rl" */
   
   if (QPCTX_ISOK(q)) {
     RSQuery_Parse_v2(pParser, 0, tok, q);
