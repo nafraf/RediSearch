@@ -80,10 +80,9 @@ assign_attr = arrow lb attr colon escaped_term rb $2;
 contains_tag = colon lb star.tags.star rb $1;
 prefix_tag = colon lb tags.star rb $1;
 suffix_tag = colon lb star.tags rb $1;
-unescaped_tag = colon lb (tags | escape wildcard) rb $1;
+unescaped_tag1 = colon lb (tags | escape wildcard) rb $1;
 unescaped_tag2 = colon lb (escape 'w' tags) rb $1;
 
-wildcard_tag_autoescaping = colon lb wildcard rb $1;
 wildcard_tag = colon lb wildcard rb $1;
 wildcard_txt = colon lp wildcard rp $1;
 
@@ -273,7 +272,7 @@ main := |*
     }
   };
 
-  unescaped_tag => {
+  unescaped_tag1 => {
     tok.numval = 0;
     tok.len = 1;
     tok.s = ts;
