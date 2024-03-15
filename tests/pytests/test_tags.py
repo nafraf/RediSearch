@@ -581,6 +581,15 @@ def testTagAutoescapingParserV2(env):
     res = env.cmd('FT.EXPLAIN', 'idx', "@tag:{w'?*1'}")
     env.assertEqual(res, "TAG:@tag {\n  WILDCARD{?*1}\n}\n}\n")
 
+    res2 = env.cmd('FT.EXPLAIN', 'idx', "@tag:{  w'?*1'}")
+    env.assertEqual(res, res2)
+
+    res2 = env.cmd('FT.EXPLAIN', 'idx', "@tag:{w'?*1'  }")
+    env.assertEqual(res, res2)
+
+    res2 = env.cmd('FT.EXPLAIN', 'idx', "@tag:{     w'?*1'  }")
+    env.assertEqual(res, res2)
+
     res = env.cmd('FT.EXPLAIN', 'idx', "@tag:{w'-@??'}")
     env.assertEqual(res, "TAG:@tag {\n  WILDCARD{-@??}\n}\n}\n")
 
@@ -632,70 +641,86 @@ def testTagAutoescapingParserV2(env):
     res = env.cmd('FT.SEARCH', 'idx', "@tag:{w'?'} -@tag:{w'w'}")
     env.assertEqual(res, [1, '{doc}:17', ['tag', 'x', 'id', '17']])
 
-    # TODO:
     # Test tags with leading and trailing spaces
     expected_result = [1, '{doc}:14', ['tag', '  with: space  ', 'id', '14']]
 
-    # res = env.cmd('FT.SEARCH', 'idx', "@tag:{  with: space  }")
-    # env.assertEqual(res, expected_result)
+    # leading and trailing spaces are removed, scaping spaces is optional
+    res = env.cmd('FT.SEARCH', 'idx', "@tag:{  with\:\ space  }")
+    env.assertEqual(res, expected_result)
 
-    # res = env.cmd('FT.SEARCH', 'idx', "@tag:{*with: space*}")
-    # env.assertEqual(res, expected_result)
+    res = env.cmd('FT.SEARCH', 'idx', "@tag:{  with\: space  }")
+    env.assertEqual(res, expected_result)
 
-    # res = env.cmd('FT.SEARCH', 'idx', "@tag:{ with: space*}")
-    # env.assertEqual(res, expected_result)
+    res = env.cmd('FT.SEARCH', 'idx', "@tag:{  with: space  }")
+    env.assertEqual(res, expected_result)
 
-    # res = env.cmd('FT.SEARCH', 'idx', "@tag:{*with: space}")
-    # env.assertEqual(res, expected_result)
+    res = env.cmd('FT.SEARCH', 'idx', "@tag:{*with: space*}")
+    env.assertEqual(res, expected_result)
 
-    # res = env.cmd('FT.SEARCH', 'idx', "@tag:{* with: space}")
-    # env.assertEqual(res, expected_result)
+    res = env.cmd('FT.SEARCH', 'idx', "@tag:{ with: space*}")
+    env.assertEqual(res, expected_result)
 
-    # res = env.cmd('FT.SEARCH', 'idx', "@tag:{* with: space *}")
-    # env.assertEqual(res, expected_result)
+    res = env.cmd('FT.SEARCH', 'idx', "@tag:{*with: space}")
+    env.assertEqual(res, expected_result)
 
-    # res = env.cmd('FT.SEARCH', 'idx', "@tag:{with: space *}")
-    # env.assertEqual(res, expected_result)
+    res = env.cmd('FT.SEARCH', 'idx', "@tag:{* with: space}")
+    env.assertEqual(res, expected_result)
+
+    res = env.cmd('FT.SEARCH', 'idx', "@tag:{* with: space *}")
+    env.assertEqual(res, expected_result)
+
+    res = env.cmd('FT.SEARCH', 'idx', "@tag:{with: space *}")
+    env.assertEqual(res, expected_result)
 
     res = env.cmd('FT.SEARCH', 'idx', "@tag:{$param}",
                   'PARAMS', '2', 'param', 'with: space')
     env.assertEqual(res, expected_result)
 
-    # TODO:
     # Test tags with leading spaces
     expected_result = [1, '{doc}:15', ['tag', '  leading:space', 'id', '15']]
 
-    # res = env.cmd('FT.SEARCH', 'idx', "@tag:{  leading*}")
-    # env.assertEqual(res, expected_result)
+    res = env.cmd('FT.SEARCH', 'idx', "@tag:{  leading*}")
+    env.assertEqual(res, expected_result)
 
-    # res = env.cmd('FT.SEARCH', 'idx', "@tag:{  leading:space}")
-    # env.assertEqual(res, expected_result)
+    res = env.cmd('FT.SEARCH', 'idx', "@tag:{  leading\:space}")
+    env.assertEqual(res, expected_result)
 
-    # res = env.cmd('FT.SEARCH', 'idx', "@tag:{*eading:space}")
-    # env.assertEqual(res, expected_result)
+    res = env.cmd('FT.SEARCH', 'idx', "@tag:{  leading:space}")
+    env.assertEqual(res, expected_result)
 
-    # res = env.cmd('FT.SEARCH', 'idx', "@tag:{* leading:space}")
-    # env.assertEqual(res, expected_result)
+    res = env.cmd('FT.SEARCH', 'idx', "@tag:{*eading:space}")
+    env.assertEqual(res, expected_result)
+
+    res = env.cmd('FT.SEARCH', 'idx', "@tag:{*eading\:space}")
+    env.assertEqual(res, expected_result)
+
+    res = env.cmd('FT.SEARCH', 'idx', "@tag:{* leading:space}")
+    env.assertEqual(res, expected_result)
 
     res = env.cmd('FT.SEARCH', 'idx', "@tag:{$param}",
                   'PARAMS', '2', 'param', 'leading:space')
     env.assertEqual(res, expected_result)
 
-    # TODO:
     # Test tags with trailing spaces
     expected_result = [1, '{doc}:16', ['tag', 'trailing:space  ', 'id', '16']]
 
-    # res = env.cmd('FT.SEARCH', 'idx', "@tag:{trailing*}")
-    # env.assertEqual(res, expected_result)
+    res = env.cmd('FT.SEARCH', 'idx', "@tag:{trailing*}")
+    env.assertEqual(res, expected_result)
 
-    # res = env.cmd('FT.SEARCH', 'idx', "@tag:{trailing:spac*}")
-    # env.assertEqual(res, expected_result)
+    res = env.cmd('FT.SEARCH', 'idx', "@tag:{trailing:spac*}")
+    env.assertEqual(res, expected_result)
 
-    # res = env.cmd('FT.SEARCH', 'idx', "@tag:{trailing:space  }")
-    # env.assertEqual(res, expected_result)
+    res = env.cmd('FT.SEARCH', 'idx', "@tag:{trailing:space  }")
+    env.assertEqual(res, expected_result)
 
-    # res = env.cmd('FT.SEARCH', 'idx', "@tag:{trailing:space *}")
-    # env.assertEqual(res, expected_result)
+    res = env.cmd('FT.SEARCH', 'idx', "@tag:{trailing\:space  }")
+    env.assertEqual(res, expected_result)
+
+    res = env.cmd('FT.SEARCH', 'idx', "@tag:{trailing:space *}")
+    env.assertEqual(res, expected_result)
+
+    res = env.cmd('FT.SEARCH', 'idx', "@tag:{trailing\:space *}")
+    env.assertEqual(res, expected_result)
 
     res = env.cmd('FT.SEARCH', 'idx', "@tag:{$param}",
                   'PARAMS', '2', 'param', 'trailing:space')
@@ -708,13 +733,6 @@ def testInvalidSyntax(env):
     env.expect('FT.CREATE', 'idx', 'ON', 'HASH', 'PREFIX', '1', '{doc}:',
                'SCHEMA', 'tag', 'TAG', 'SORTABLE', 'id',
                'NUMERIC', 'SORTABLE').ok()
-
-    # TODO:
-    # with env.assertResponseError(contained='Syntax error'):
-    #     env.cmd('FT.EXPLAIN', 'idx', "@tag:{ w'?*1'}")
-
-    # with env.assertResponseError(contained='Syntax error'):
-    #     env.cmd('FT.EXPLAIN', 'idx', "@tag:{w'?*1' }")
 
     with env.assertResponseError(contained='Syntax error'):
         env.cmd('FT.EXPLAIN', 'idx', "@tag:{w\\'?*1'}")

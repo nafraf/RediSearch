@@ -55,7 +55,7 @@ escaped_term = (((any - (punct | cntrl | space | escape)) | escaped_character) |
 
 # these are the punctuations that are not valid in a autoescaped tag, they have
 # special meaning and need to be escaped to be considered as part of a tag
-tag_invalid_punct = (lb | rb | star | escape | '$' | '|' | ',' | space);
+tag_invalid_punct = (lb | rb | star | escape | '$' | '|');
 
 token_separators = ( '!' | '"' | '#' | '$' | '%' | '&' | squote | '(' | ')' |
                     star |'+' | '-' | '.' | '/' | ':' | ';' | '<' | '=' | '>' |
@@ -66,7 +66,7 @@ invalid_punct = punct - valid_punct;
 
 mod = '@'.escaped_term $ 1;
 attr = '$'.escaped_term $ 1;
-tags = (((any - (invalid_punct | cntrl | space | escape)) | escaped_character) | '_' | '?')+ $0;
+tags = (((any - (invalid_punct | cntrl | escape)) | escaped_character) | '_' | '?')+ $0;
 
 contains = (star.escaped_term.star | star.number.star | star.attr.star) $1;
 prefix = (escaped_term.star | number.star | attr.star) $1;
