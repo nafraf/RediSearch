@@ -9,6 +9,7 @@
 
 %left LOWEST.
 
+%left PUNCTUATION.
 %left TEXTEXPR.
 
 %left ORX.

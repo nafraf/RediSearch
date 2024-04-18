@@ -141,3 +141,78 @@ def test_dialect_info(env):
 
   env.flush()
   check_info_module_results(env, [0,0,0,0,0])
+
+def test_dialect5_punct_chars(env):
+  env.expect("FT.CONFIG SET DEFAULT_DIALECT 5").ok()
+  env.expect('FT.CREATE', 'idx', 'SCHEMA', 'tag', 'TAG', 'text', 'TEXT').ok()
+
+  error_msg = 'Syntax error at offset'
+  # Test invalid syntax caused by punctuation chars
+  for c in [ '!', '?', '^', '=', '@', '&', '#', '%', '+', '`', '{', '}', '[',
+            ']', '(', ')', '<', '>', ':', ';', ',', '.', '/']:
+    env.expect('FT.SEARCH', 'idx', f'{c}@text:(abc)').error().contains(error_msg)
+    env.expect('FT.SEARCH', 'idx', f'@{c}text:(abc)').error().contains(error_msg)
+    env.expect('FT.SEARCH', 'idx', f'@text{c}:(abc)').error().contains(error_msg)
+    env.expect('FT.SEARCH', 'idx', f'@text:{c}(abc)').error().contains(error_msg)
+    env.expect('FT.SEARCH', 'idx', f'@text:(ab{c}c)').error().contains(error_msg)
+    env.expect('FT.SEARCH', 'idx', f'@text:(abc){c}').error().contains(error_msg)
+
+  # '*' is the prefix/infix/suffix operator it can part of the term
+  c = '*'
+  env.expect('FT.SEARCH', 'idx', f'{c}@text:(abc)').error().contains(error_msg)
+  env.expect('FT.SEARCH', 'idx', f'@{c}text:(abc)').error().contains(error_msg)
+  env.expect('FT.SEARCH', 'idx', f'@text{c}:(abc)').error().contains(error_msg)
+  env.expect('FT.SEARCH', 'idx', f'@text:{c}(abc)').error().contains(error_msg)
+  env.expect('FT.SEARCH', 'idx', f'@text:(ab{c}c)').equal([0]) # no error
+  env.expect('FT.SEARCH', 'idx', f'@text:(abc){c}').error().contains(error_msg)
+  
+  # '$' is used for parameters
+  c = '$'
+  env.expect('FT.SEARCH', 'idx', f'{c}@text:(abc)').error().contains(error_msg)
+  env.expect('FT.SEARCH', 'idx', f'@{c}text:(abc)').error().contains(error_msg)
+  env.expect('FT.SEARCH', 'idx', f'@text{c}:(abc)').error().contains(error_msg)
+  env.expect('FT.SEARCH', 'idx', f'@text:{c}(abc)').error().contains(error_msg)
+  env.expect('FT.SEARCH', 'idx', f'@text:(ab{c}c)').error().contains('No such parameter')
+  env.expect('FT.SEARCH', 'idx', f'@text:(abc){c}').error().contains(error_msg)
+
+  # '-' is the negation operator, it can be part of the term or used before the field name
+  c = '-'
+  env.expect('FT.SEARCH', 'idx', f'{c}@text:(abc)').equal([0]) # no error
+  env.expect('FT.SEARCH', 'idx', f'@{c}text:(abc)').error().contains(error_msg)
+  env.expect('FT.SEARCH', 'idx', f'@text{c}:(abc)').error().contains(error_msg)
+  env.expect('FT.SEARCH', 'idx', f'@text:{c}(abc)').equal([0]) # no error - # TODO: Validate this is the correct behavior
+  env.expect('FT.SEARCH', 'idx', f'@text:(ab{c}c)').equal([0]) # no error
+  env.expect('FT.SEARCH', 'idx', f'@text:(abc){c}').error().contains(error_msg)
+
+  # '|' is the OR operator
+  c = '|'
+  env.expect('FT.SEARCH', 'idx', f'{c}@text:(abc)').error().contains(error_msg)
+  env.expect('FT.SEARCH', 'idx', f'@{c}text:(abc)').error().contains(error_msg)
+  env.expect('FT.SEARCH', 'idx', f'@text{c}:(abc)').error().contains(error_msg)
+  env.expect('FT.SEARCH', 'idx', f'@text:{c}(abc)').error().contains(error_msg)
+  env.expect('FT.SEARCH', 'idx', f'@text:(ab{c}c)').equal([0]) # no error
+  env.expect('FT.SEARCH', 'idx', f'@text:(abc){c}').error().contains(error_msg)
+
+  # '~' is the optional operator
+  c = '~'
+  env.expect('FT.SEARCH', 'idx', f'{c}@text:(abc)').equal([0]) # no error
+  env.expect('FT.SEARCH', 'idx', f'@{c}text:(abc)').error().contains(error_msg)
+  env.expect('FT.SEARCH', 'idx', f'@text{c}:(abc)').error().contains(error_msg)
+  env.expect('FT.SEARCH', 'idx', f'@text:{c}(abc)').equal([0]) # no error - # TODO: Validate this is the correct behavior
+  env.expect('FT.SEARCH', 'idx', f'@text:(ab{c}c)').equal([0]) # no error
+  env.expect('FT.SEARCH', 'idx', f'@text:(abc){c}').error().contains(error_msg)
+
+  # '_' is valid for field names
+  c = '_'
+  env.expect('FT.SEARCH', 'idx', f'{c}@text:(abc)').error().contains(error_msg)
+  env.expect('FT.SEARCH', 'idx', f'@{c}text:(abc)').equal([0]) # no error
+  env.expect('FT.SEARCH', 'idx', f'@text{c}:(abc)').equal([0]) # no error
+  env.expect('FT.SEARCH', 'idx', f'@text:{c}(abc)').error().contains(error_msg)
+  env.expect('FT.SEARCH', 'idx', f'@text:(ab{c}c)').equal([0]) # no error # TODO: Validate this is the correct behavior
+  env.expect('FT.SEARCH', 'idx', f'@text:(abc){c}').error().contains(error_msg)
+
+
+
+
+
+

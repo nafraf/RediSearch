@@ -234,7 +234,15 @@ main := |*
     } 
   };
   space;
-  punct;
+
+  punct => {
+    tok.pos = ts - q->raw;
+    RSQuery_Parse_v3(pParser, PUNCTUATION, tok, q);
+    if (!QPCTX_ISOK(q)) {
+      fbreak;
+    }
+  };
+  
   cntrl;
   
   isempty => {
