@@ -3451,3 +3451,51 @@ RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
 
   return REDISMODULE_OK;
 }
+
+int RedisModule_OnUnload(RedisModuleCtx *ctx) {
+
+  static int invoked = 0;
+  if (invoked || !RS_Initialized) {
+    return REDISMODULE_OK;
+  }
+  invoked = 1;
+
+  // First free all indexes
+  Indexes_Free(specDict_g);
+  dictRelease(specDict_g);
+  specDict_g = NULL;
+
+  // Let the workers finish BEFORE we call CursorList_Destroy, since it frees a global
+  // data structure that is accessed upon releasing the spec (and running thread might hold
+  // a reference to the spec bat this time).
+  workersThreadPool_Drain(RSDummyContext, 0);
+  workersThreadPool_Destroy();
+
+  if (legacySpecDict) {
+    dictRelease(legacySpecDict);
+    legacySpecDict = NULL;
+  }
+  LegacySchemaRulesArgs_Free(RSDummyContext);
+
+  // free thread pools
+  GC_ThreadPoolDestroy_OnModuleUnload();
+  CleanPool_ThreadPoolDestroy_OnModuleUnload();
+  ReindexPool_ThreadPoolDestroy_OnModuleUnload();
+  // workersThreadPool_Destroy();
+  ConcurrentSearch_ThreadPoolDestroy();
+
+  // free global structures
+  Extensions_Free();
+  StopWordList_FreeGlobals();
+  FunctionRegistry_Free();
+  mempool_free_global();
+  IndexAlias_DestroyGlobal(&AliasTable_g);
+  freeGlobalAddStrings();
+  SchemaPrefixes_Free(SchemaPrefixes_g);
+  // GeometryApi_Free();
+
+  Dictionary_Free();
+  RediSearch_LockDestory();
+
+  return REDISMODULE_OK;
+}

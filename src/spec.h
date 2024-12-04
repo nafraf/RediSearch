@@ -680,7 +680,9 @@ void Indexes_ReplaceMatchingWithSchemaRules(RedisModuleCtx *ctx, RedisModuleStri
 
 void CleanPool_ThreadPoolStart();
 void CleanPool_ThreadPoolDestroy();
+void CleanPool_ThreadPoolDestroy_OnModuleUnload();
 size_t CleanInProgressOrPending();
+void ReindexPool_ThreadPoolDestroy_OnModuleUnload();
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 

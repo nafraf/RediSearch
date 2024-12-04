@@ -53,6 +53,7 @@ void GCContext_WaitForAllOperations(RedisModuleBlockedClient* bc);
 
 void GC_ThreadPoolStart();
 void GC_ThreadPoolDestroy();
+void GC_ThreadPoolDestroy_OnModuleUnload();
 
 #ifdef __cplusplus
 }

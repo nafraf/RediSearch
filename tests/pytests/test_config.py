@@ -416,3 +416,17 @@ def testSetACLUsername():
             env.assertTrue(False)
     except Exception as e:
         env.assertEqual(str(e), 'Timeout: operation timeout exceeded')
+
+@skip(cluster=True)
+def testModuleLoadexInvalidConfig():
+    env = Env(noDefaultModuleArgs=True, module='', moduleArgs='')
+    redisearch_module_path = os.getenv('MODULE')
+
+    env.start()
+    res = env.cmd('MODULE', 'LIST')
+    env.assertEqual(res, [])
+    env.expect('MODULE', 'LOADEX', redisearch_module_path, 'CONFIG',
+               'invalid_config', 1).error()\
+                .contains('Error loading the extension')
+    env.assertTrue(env.isUp())
+    env.stop()

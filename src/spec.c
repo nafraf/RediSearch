@@ -1453,6 +1453,16 @@ void CleanPool_ThreadPoolDestroy() {
   }
 }
 
+void CleanPool_ThreadPoolDestroy_OnModuleUnload() {
+  if (cleanPool) {
+    if (RSGlobalConfig.freeResourcesThread) {
+      redisearch_thpool_wait(cleanPool);
+    }
+    redisearch_thpool_destroy(cleanPool);
+    cleanPool = NULL;
+  }
+}
+
 uint16_t getPendingIndexDrop() {
   return __atomic_load_n(&pendingIndexDropCount_g, __ATOMIC_RELAXED);
 }
@@ -2300,6 +2310,13 @@ void ReindexPool_ThreadPoolDestroy() {
     redisearch_thpool_destroy(reindexPool);
     reindexPool = NULL;
     RedisModule_ThreadSafeContextLock(RSDummyContext);
+  }
+}
+
+void ReindexPool_ThreadPoolDestroy_OnModuleUnload() {
+  if (reindexPool != NULL) {
+    redisearch_thpool_destroy(reindexPool);
+    reindexPool = NULL;
   }
 }
 

@@ -185,3 +185,10 @@ void GC_ThreadPoolDestroy() {
     RedisModule_ThreadSafeContextLock(RSDummyContext);
   }
 }
+
+void GC_ThreadPoolDestroy_OnModuleUnload() {
+  if (gcThreadpool_g != NULL) {
+    redisearch_thpool_destroy(gcThreadpool_g);
+    gcThreadpool_g = NULL;
+  }
+}
