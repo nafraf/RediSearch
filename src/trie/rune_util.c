@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static uint32_t __fold(uint32_t runelike) {
+uint32_t __fold(uint32_t runelike) {
   uint32_t lowered = 0;
   const char *map = 0;
   map = nu_tofold(runelike);
@@ -25,6 +25,32 @@ static uint32_t __fold(uint32_t runelike) {
 
 rune runeFold(rune r) {
   return __fold((uint32_t)r);
+}
+
+void strToFoldedStr(const char *str, char *dst, size_t *len) {
+
+  ssize_t rlen = nu_strlen(str, nu_utf8_read);
+  if (rlen > MAX_RUNESTR_LEN) {
+    if (len) *len = 0;
+    return;
+  }
+
+  uint32_t decoded[rlen + 1];
+  decoded[rlen] = 0;
+  nu_readstr(str, decoded, nu_utf8_read);
+
+  uint32_t unicode[rlen + 1];
+
+  rune *ret = rm_calloc(rlen + 1, sizeof(rune));
+
+  for (int i = 0; i < rlen; i++) {
+    uint32_t runelike = decoded[i];
+    ret[i] = (rune)__fold(runelike);
+    unicode[i] = (uint32_t)ret[i];
+  }
+  if (len) *len = rlen;
+  unicode[rlen] = 0;
+  nu_writestr(unicode, dst, nu_utf8_write);
 }
 
 char *runesToStr(const rune *in, size_t len, size_t *utflen) {

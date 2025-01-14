@@ -12,6 +12,7 @@
 #include <math.h>
 #include <string.h>
 #include <ctype.h>
+#include <../trie/rune_util.h>
 /* Strconv - common simple string conversion utils */
 
 // Case insensitive string equal
@@ -54,7 +55,7 @@ static int ParseDouble(const char *arg, double *d, int sign) {
       *e != '\0') {
     return 0;
   }
-  
+
   if(sign == -1) {
     *d = -(*d);
   }
@@ -107,7 +108,7 @@ static char *rm_strndup_unescape(const char *s, size_t len) {
 }
 
 // strndup + lowercase in one pass!
-static char *rm_strdupcase(const char *s, size_t len) {
+static char *rm_strdupcase_old(const char *s, size_t len) {
   char *ret = rm_strndup(s, len);
   char *dst = ret;
   char *src = dst;
@@ -125,6 +126,49 @@ static char *rm_strdupcase(const char *s, size_t len) {
   *dst = '\0';
 
   return ret;
+}
+
+// s is the input string in utf8
+// len is the length of the input string in bytes
+static char *rm_strdupcase_unicode(const char *s, size_t len) {
+  char *ret = rm_strndup(s, len);
+  ssize_t nu_len = nu_strlen(s, nu_utf8_read);
+  if (nu_len > MAX_RUNESTR_LEN) {
+    return NULL;
+  }
+
+  uint32_t decoded[nu_len + 1];
+  decoded[nu_len] = 0;
+  nu_readstr(s, decoded, nu_utf8_read);
+
+  uint32_t unicode[nu_len + 1];
+  unicode[nu_len] = 0;
+
+  int char_pos = 0;
+  int i = 0;
+  for (i = 0; i < nu_len; i++) {
+    // unescape
+    if (s[char_pos] == '\\' && (ispunct(s[char_pos+1]) || isspace(s[char_pos+1]))) {
+      char_pos++;
+      continue;
+    }
+
+    unicode[i] = (rune)__fold(decoded[i]);
+
+    if (decoded[i] < 0x100) {
+      char_pos++;
+    } else {
+      char_pos += 2;
+    }
+  }
+
+  nu_writenstr(unicode, i, ret, nu_utf8_write);
+  return ret;
+}
+
+static char *rm_strdupcase(const char *s, size_t len) {
+  return rm_strdupcase_unicode(s, len);
+  // return rm_strdupcase_old(s, len);
 }
 
 #endif

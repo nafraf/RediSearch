@@ -40,10 +40,19 @@ static void simpleTokenizer_Start(RSTokenizer *base, char *text, size_t len, uin
  * - len on input contains the length of the raw token. on output contains the
  * on output contains the length of the normalized token
  */
-static char *DefaultNormalize(char *s, char *dst, size_t *len) {
+static char *DefaultNormalize_old(char *s, char *dst, size_t *len) {
   size_t origLen = *len;
   char *realDest = s;
   size_t dstLen = 0;
+
+  // rune *rstr = NULL;
+  // size_t nbegin;
+  // t_len slen = 0;
+  // size_t termLen;
+  // rstr = strToFoldedRunes(s, &nbegin);
+  // s = runesToStr(rstr, nbegin, &termLen);
+
+  // strToFoldedStr(s, dst, len);
 
 #define SWITCH_DEST()        \
   if (realDest != dst) {     \
@@ -53,10 +62,11 @@ static char *DefaultNormalize(char *s, char *dst, size_t *len) {
   // set to 1 if the previous character was a backslash escape
   int escaped = 0;
   for (size_t ii = 0; ii < origLen; ++ii) {
-    if (isupper(s[ii])) {
-      SWITCH_DEST();
-      realDest[dstLen++] = tolower(s[ii]);
-    } else if ((isblank(s[ii]) && !escaped) || iscntrl(s[ii])) {
+    // if (isupper(s[ii])) {
+    //   SWITCH_DEST();
+    //   realDest[dstLen++] = tolower(s[ii]);
+    // } else
+    if ((isblank(s[ii]) && !escaped) || iscntrl(s[ii])) {
       SWITCH_DEST();
     } else if (s[ii] == '\\' && !escaped) {
       SWITCH_DEST();
@@ -70,6 +80,59 @@ static char *DefaultNormalize(char *s, char *dst, size_t *len) {
 
   *len = dstLen;
   return dst;
+}
+
+static char *DefaultNormalize_unicode(char *s, char *dst, size_t *len) {
+  size_t origLen = *len;
+
+  ssize_t nu_len = nu_strlen(s, nu_utf8_read);
+  if (nu_len > MAX_RUNESTR_LEN) {
+    return NULL;
+  }
+
+  uint32_t decoded[nu_len + 1];
+  decoded[nu_len] = 0;
+  nu_readstr(s, decoded, nu_utf8_read);
+
+  uint32_t unicode[nu_len + 1];
+  unicode[nu_len] = 0;
+
+  // set to 1 if the previous character was a backslash escape
+  int escaped = 0;
+
+  // position in the original string
+  int char_pos = 0;
+  int i = 0;
+  for (i = 0; i < nu_len && char_pos < origLen; i++) {
+    if ((isblank(s[char_pos]) && !escaped) || iscntrl(s[char_pos])) {
+      unicode[i] = (uint32_t)decoded[i];
+    } else if (s[char_pos] == '\\' && !escaped) {
+      unicode[i] = (uint32_t)decoded[i];
+      escaped = 1;
+      char_pos++;
+      continue;
+    } else {
+      unicode[i] = (rune)__fold(decoded[i]);
+    }
+    escaped = 0;
+
+    if (decoded[i] < 0x100) {
+      char_pos++;
+    } else {
+      char_pos += 2;
+    }
+  }
+  // nu_writestr(unicode, dst, nu_utf8_write);
+  nu_writenstr(unicode, i, dst, nu_utf8_write);
+  *len = char_pos;
+  return dst;
+}
+
+static char *DefaultNormalize(char *s, char *dst, size_t *len) {
+  // char t1[MAX_NORMALIZE_SIZE];
+  // char *x = DefaultNormalize_unicode(s, t1, len);
+  return DefaultNormalize_unicode(s,dst, len);
+  // return DefaultNormalize_old(s, dst, len);
 }
 
 // tokenize the text in the context

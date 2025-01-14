@@ -41,6 +41,10 @@ char *runesToStr(const rune *in, size_t len, size_t *utflen);
 
 rune *strToFoldedRunes(const char *str, size_t *len);
 
+void strToFoldedStr(const char *str, char *dst, size_t *len);
+
+uint32_t __fold(uint32_t runelike);
+
 /* Convert a utf-8 string to constant width runes */
 rune *strToRunes(const char *str, size_t *len);
 
