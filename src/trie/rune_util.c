@@ -41,12 +41,9 @@ void strToFoldedStr(const char *str, char *dst, size_t *len) {
 
   uint32_t unicode[rlen + 1];
 
-  rune *ret = rm_calloc(rlen + 1, sizeof(rune));
-
   for (int i = 0; i < rlen; i++) {
     uint32_t runelike = decoded[i];
-    ret[i] = (rune)__fold(runelike);
-    unicode[i] = (uint32_t)ret[i];
+    unicode[i] = (uint32_t)__fold(runelike);
   }
   if (len) *len = rlen;
   unicode[rlen] = 0;

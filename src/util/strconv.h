@@ -15,6 +15,8 @@
 #include <../trie/rune_util.h>
 /* Strconv - common simple string conversion utils */
 
+#define MAX_NUNICODE_NORMALIZE_SIZE 128
+
 // Case insensitive string equal
 #define STR_EQCASE(str, len, other) (len == strlen(other) && !strncasecmp(str, other, len))
 
@@ -107,6 +109,54 @@ static char *rm_strndup_unescape(const char *s, size_t len) {
   return ret;
 }
 
+// transform utf8 string to lowercase using nunicode library
+static char* nunicode_tolower(const char *encoded) {
+	ssize_t unicode_len = nu_strtransformlen(encoded, nu_utf8_read, nu_tolower, nu_casemap_read);
+	uint32_t *unicode_buffer = (uint32_t *)rm_malloc(sizeof(*unicode_buffer) * (unicode_len + 1));
+
+  // Decode utf8 string into Unicode codepoints and convert to lowercase
+	uint32_t unicode;
+	unsigned i = 0;
+	while (1) {
+    // Read unicode codepoint from utf8 string
+		encoded = nu_utf8_read(encoded, &unicode);
+    // Transform unicode codepoint to lowercase
+		const char *map = nu_tolower(unicode);
+
+    // Read the transformed codepoint and store it in the unicode buffer
+		if (map != 0) {
+			uint32_t mu;
+			while (1) {
+				map = nu_casemap_read(map, &mu);
+				if (mu == 0) {
+					break;
+				}
+				unicode_buffer[i] = mu;
+				++i;
+			}
+		}
+		else {
+      // If no transformation is needed, just copy the unicode codepoint
+			unicode_buffer[i] = unicode;
+			++i;
+		}
+
+    // Break if the end of the string is reached
+		if (unicode == 0) {
+			break;
+		}
+	}
+
+  // Encode Unicode codepoints back to utf8 string
+	ssize_t reencoded_len = nu_bytelen(unicode_buffer, nu_utf8_write);
+	char *reencoded = (char*)rm_malloc(reencoded_len + 1);
+	nu_writestr(unicode_buffer, reencoded, nu_utf8_write);
+	rm_free(unicode_buffer);
+
+	return reencoded;
+}
+
+
 // strndup + lowercase in one pass!
 static char *rm_strdupcase_old(const char *s, size_t len) {
   char *ret = rm_strndup(s, len);
@@ -167,8 +217,10 @@ static char *rm_strdupcase_unicode(const char *s, size_t len) {
 }
 
 static char *rm_strdupcase(const char *s, size_t len) {
-  return rm_strdupcase_unicode(s, len);
-  // return rm_strdupcase_old(s, len);
+  char *origCase = rm_strdupcase_old(s, len);
+  char *lowerCase = nunicode_tolower(origCase);
+  rm_free(origCase);
+  return lowerCase;
 }
 
 #endif

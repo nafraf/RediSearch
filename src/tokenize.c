@@ -40,19 +40,10 @@ static void simpleTokenizer_Start(RSTokenizer *base, char *text, size_t len, uin
  * - len on input contains the length of the raw token. on output contains the
  * on output contains the length of the normalized token
  */
-static char *DefaultNormalize_old(char *s, char *dst, size_t *len) {
+static char *DefaultNormalize(char *s, char *dst, size_t *len) {
   size_t origLen = *len;
   char *realDest = s;
   size_t dstLen = 0;
-
-  // rune *rstr = NULL;
-  // size_t nbegin;
-  // t_len slen = 0;
-  // size_t termLen;
-  // rstr = strToFoldedRunes(s, &nbegin);
-  // s = runesToStr(rstr, nbegin, &termLen);
-
-  // strToFoldedStr(s, dst, len);
 
 #define SWITCH_DEST()        \
   if (realDest != dst) {     \
@@ -62,11 +53,10 @@ static char *DefaultNormalize_old(char *s, char *dst, size_t *len) {
   // set to 1 if the previous character was a backslash escape
   int escaped = 0;
   for (size_t ii = 0; ii < origLen; ++ii) {
-    // if (isupper(s[ii])) {
-    //   SWITCH_DEST();
-    //   realDest[dstLen++] = tolower(s[ii]);
-    // } else
-    if ((isblank(s[ii]) && !escaped) || iscntrl(s[ii])) {
+    if (isupper(s[ii])) {
+      SWITCH_DEST();
+      realDest[dstLen++] = tolower(s[ii]);
+    } else if ((isblank(s[ii]) && !escaped) || iscntrl(s[ii])) {
       SWITCH_DEST();
     } else if (s[ii] == '\\' && !escaped) {
       SWITCH_DEST();
@@ -82,7 +72,39 @@ static char *DefaultNormalize_old(char *s, char *dst, size_t *len) {
   return dst;
 }
 
-static char *DefaultNormalize_unicode(char *s, char *dst, size_t *len) {
+static char *DefaultNormalize_unicodev2(char *s, char *dst, size_t *len) {
+  size_t origLen = *len;
+  char *realDest = s;
+  size_t dstLen = 0;
+
+#define SWITCH_DEST()        \
+  if (realDest != dst) {     \
+    realDest = dst;          \
+    memcpy(realDest, s, ii); \
+  }
+  // set to 1 if the previous character was a backslash escape
+  int escaped = 0;
+  for (size_t ii = 0; ii < origLen; ++ii) {
+    if (isupper(s[ii])) {
+      SWITCH_DEST();
+      realDest[dstLen++] = tolower(s[ii]);
+    } else if ((isblank(s[ii]) && !escaped) || iscntrl(s[ii])) {
+      SWITCH_DEST();
+    } else if (s[ii] == '\\' && !escaped) {
+      SWITCH_DEST();
+      escaped = 1;
+      continue;
+    } else {
+      dst[dstLen++] = s[ii];
+    }
+    escaped = 0;
+  }
+  *len = dstLen;
+  return dst;
+}
+
+
+static char *DefaultNormalize_unicodev1(char *s, char *dst, size_t *len) {
   size_t origLen = *len;
 
   ssize_t nu_len = nu_strlen(s, nu_utf8_read);
@@ -128,13 +150,6 @@ static char *DefaultNormalize_unicode(char *s, char *dst, size_t *len) {
   return dst;
 }
 
-static char *DefaultNormalize(char *s, char *dst, size_t *len) {
-  // char t1[MAX_NORMALIZE_SIZE];
-  // char *x = DefaultNormalize_unicode(s, t1, len);
-  return DefaultNormalize_unicode(s,dst, len);
-  // return DefaultNormalize_old(s, dst, len);
-}
-
 // tokenize the text in the context
 uint32_t simpleTokenizer_Next(RSTokenizer *base, Token *t) {
   TokenizerCtx *ctx = &base->ctx;
@@ -156,15 +171,17 @@ uint32_t simpleTokenizer_Next(RSTokenizer *base, Token *t) {
       normBuf = tok;
     }
 
-    char *normalized = DefaultNormalize(tok, normBuf, &normLen);
+    char *normalized_origCase = DefaultNormalize(tok, normBuf, &normLen);
 
     // ignore tokens that turn into nothing, unless the whole string is empty.
-    if ((normalized == NULL || normLen == 0) && !ctx->empty_input) {
+    if ((normalized_origCase == NULL || normLen == 0) && !ctx->empty_input) {
       continue;
     }
+    char *normalized = nunicode_tolower(normalized_origCase);
 
     // skip stopwords
     if (!ctx->empty_input && StopWordList_Contains(ctx->stopwords, normalized, normLen)) {
+      rm_free(normalized);
       continue;
     }
 

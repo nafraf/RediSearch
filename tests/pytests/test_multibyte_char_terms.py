@@ -278,8 +278,6 @@ def testStopWords(env):
         # they were not indexed.
         res = conn.execute_command('FT.SEARCH', 'idx2', '@t:(НЕ | ОТ | И)',
                                    'NOCONTENT', 'SORTBY', 't')
-        # res = conn.execute_command('FT.SEARCH', 'idx2', '@t:(НЕ)',
-        #                            'NOCONTENT', 'SORTBY', 't')
         env.assertEqual(res, [0], message=f'Dialect: {dialect}')
 
 
