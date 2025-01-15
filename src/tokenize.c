@@ -69,6 +69,25 @@ static char *DefaultNormalize(char *s, char *dst, size_t *len) {
   }
 
   *len = dstLen;
+  if (dstLen) {
+    char *tmp = rm_strndup(dst, dstLen);
+    if (!tmp) {
+      return dst;
+    }
+    size_t len2 = 0;
+    char *lower_dst = nunicode_tolower(tmp, &len2);
+    if (len2 > dstLen) {
+      rm_free(lower_dst);
+      rm_free(tmp);
+      return dst;
+    }
+    if (lower_dst) {
+      memcpy(dst, lower_dst, len2);
+      *len = len2;
+      rm_free(lower_dst);
+    }
+    rm_free(tmp);
+  }
   return dst;
 }
 
@@ -171,17 +190,15 @@ uint32_t simpleTokenizer_Next(RSTokenizer *base, Token *t) {
       normBuf = tok;
     }
 
-    char *normalized_origCase = DefaultNormalize(tok, normBuf, &normLen);
+    char *normalized = DefaultNormalize(tok, normBuf, &normLen);
 
     // ignore tokens that turn into nothing, unless the whole string is empty.
-    if ((normalized_origCase == NULL || normLen == 0) && !ctx->empty_input) {
+    if ((normalized == NULL || normLen == 0) && !ctx->empty_input) {
       continue;
     }
-    char *normalized = nunicode_tolower(normalized_origCase);
 
     // skip stopwords
     if (!ctx->empty_input && StopWordList_Contains(ctx->stopwords, normalized, normLen)) {
-      rm_free(normalized);
       continue;
     }
 

@@ -110,7 +110,9 @@ static char *rm_strndup_unescape(const char *s, size_t len) {
 }
 
 // transform utf8 string to lowercase using nunicode library
-static char* nunicode_tolower(const char *encoded) {
+// returns the transformed string
+// the length of the transformed string is stored in len
+static char* nunicode_tolower(const char *encoded, size_t *len) {
 	ssize_t unicode_len = nu_strtransformlen(encoded, nu_utf8_read, nu_tolower, nu_casemap_read);
 	uint32_t *unicode_buffer = (uint32_t *)rm_malloc(sizeof(*unicode_buffer) * (unicode_len + 1));
 
@@ -152,7 +154,9 @@ static char* nunicode_tolower(const char *encoded) {
 	char *reencoded = (char*)rm_malloc(reencoded_len + 1);
 	nu_writestr(unicode_buffer, reencoded, nu_utf8_write);
 	rm_free(unicode_buffer);
-
+  if (len) {
+    *len = reencoded_len;
+  }
 	return reencoded;
 }
 
@@ -217,8 +221,9 @@ static char *rm_strdupcase_unicode(const char *s, size_t len) {
 }
 
 static char *rm_strdupcase(const char *s, size_t len) {
+  // return rm_strdupcase_old(s, len);
   char *origCase = rm_strdupcase_old(s, len);
-  char *lowerCase = nunicode_tolower(origCase);
+  char *lowerCase = nunicode_tolower(origCase, NULL);
   rm_free(origCase);
   return lowerCase;
 }
