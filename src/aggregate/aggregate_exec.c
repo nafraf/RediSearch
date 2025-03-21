@@ -21,7 +21,12 @@
 #include "info/global_stats.h"
 #include "aggregate_debug.h"
 
-typedef enum { COMMAND_AGGREGATE, COMMAND_SEARCH, COMMAND_EXPLAIN } CommandType;
+typedef enum {
+  COMMAND_AGGREGATE,
+  COMMAND_SEARCH,
+  COMMAND_EXPLAIN,
+  COMMAND_HYBRID
+} CommandType;
 
 typedef enum {
   EXEC_NO_FLAGS = 0x00,
@@ -1005,6 +1010,10 @@ int RSAggregateCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
 
 int RSSearchCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
   return execCommandCommon(ctx, argv, argc, COMMAND_SEARCH, EXEC_NO_FLAGS);
+}
+
+int RSHybridCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
+  return execCommandCommon(ctx, argv, argc, COMMAND_HYBRID, EXEC_NO_FLAGS);
 }
 
 #define PROFILE_1ST_PARAM 2
