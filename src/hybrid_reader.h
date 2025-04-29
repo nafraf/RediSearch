@@ -47,6 +47,8 @@ typedef struct {
   RSIndexResult **returnedResults; // Save the pointers to be freed in clean-up.
   char *scoreField;                // To use by the sorter, for distinguishing between different vector fields.
   mm_heap_t *topResults;           // Sorted by score (min-max heap).
+  mm_heap_t *textResults;          // Sorted by score (min-max heap). HYBRID command mode only.
+  mm_heap_t *vectorResults;        // Sorted by distance (min-max heap). HYBRID command mode only.
   size_t numIterations;
   bool canTrimDeepResults;         // Ignore the document scores, only vector score matters. No need to deep copy the results from the child iterator.
   TimeoutCtx timeoutCtx;           // Timeout parameters

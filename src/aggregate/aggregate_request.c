@@ -484,6 +484,7 @@ static int parseQueryLegacyArgs(ArgsCursor *ac, RSSearchOptions *options, bool *
 
 static int parseQueryArgs(ArgsCursor *ac, AREQ *req, RSSearchOptions *searchOpts,
                           AggregatePlan *plan, QueryError *status) {
+  RedisModule_Log(NULL, "warning", "Nafraf: parseQueryArgs");
   // Parse query-specific arguments..
   const char *languageStr = NULL;
   ArgsCursor returnFields = {0};
@@ -915,6 +916,7 @@ AREQ *AREQ_New(void) {
 static bool hasQuerySortby(const AGGPlan *pln);
 
 int AREQ_Compile(AREQ *req, RedisModuleString **argv, int argc, QueryError *status) {
+  RedisModule_Log(NULL, "warning", "Nafraf: AREQ_Compile");
   req->args = rm_malloc(sizeof(*req->args) * argc);
   req->nargs = argc;
   // Copy the arguments into an owned array of sds strings

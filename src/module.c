@@ -383,6 +383,7 @@ int QueryExplainCLICommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
 
 int RSAggregateCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc);
 int RSSearchCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc);
+int RSHybridCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc);
 int RSCursorCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc);
 int RSProfileCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc);
 
@@ -1299,6 +1300,9 @@ int RediSearch_InitModuleInternal(RedisModuleCtx *ctx) {
 
   RM_TRY(RMCreateSearchCommand(ctx, RS_AGGREGATE_CMD, RSAggregateCommand,
          "readonly", INDEX_ONLY_CMD_ARGS, "read", true))
+
+  RM_TRY(RMCreateSearchCommand(ctx, RS_HYBRID_CMD, RSHybridCommand, "readonly",
+         INDEX_ONLY_CMD_ARGS, "read", true))
 
   RM_TRY(RMCreateSearchCommand(ctx, RS_GET_CMD, GetSingleDocumentCommand,
          "readonly", INDEX_DOC_CMD_ARGS, "read", !IsEnterprise()))
@@ -3136,6 +3140,58 @@ int RSAggregateCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc);
 void DEBUG_RSExecDistAggregate(RedisModuleCtx *ctx, RedisModuleString **argv, int argc,
                          struct ConcurrentCmdCtx *cmdCtx);
 
+int DistHybridCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
+  if (NumShards == 0) {
+    return RedisModule_ReplyWithError(ctx, CLUSTERDOWN_ERR);
+  } else if (argc < 3) {
+    return RedisModule_WrongArity(ctx);
+  }
+
+  // TODO: Can we reuse RSExecDistAggregate?
+  // Coord callback
+  ConcurrentCmdHandler dist_callback = RSExecDistAggregate;
+
+  bool isDebug = (RMUtil_ArgIndex("_FT.DEBUG", argv, 1) != -1);
+  if (isDebug) {
+    argv++;
+    argc--;
+    dist_callback = DEBUG_RSExecDistAggregate;
+  }
+
+  // Prepare the spec ref for the background thread
+  const char *idx = RedisModule_StringPtrLen(argv[1], NULL);
+  IndexLoadOptions lopts = {.nameC = idx, .flags = INDEXSPEC_LOAD_NOCOUNTERINC};
+  StrongRef spec_ref = IndexSpec_LoadUnsafeEx(&lopts);
+  IndexSpec *sp = StrongRef_Get(spec_ref);
+  if (!sp) {
+    // Reply with error
+    return RedisModule_ReplyWithErrorFormat(ctx, "No such index %s", idx);
+  }
+  if (sp->scan_failed_OOM) {
+    return RedisModule_ReplyWithErrorFormat(ctx,
+      "Background scan for index %s failed due to OOM. Queries cannot be executed on an incomplete index.",
+      idx);
+  }
+
+  bool isProfile = (RMUtil_ArgIndex("FT.PROFILE", argv, 1) != -1);
+  // Check the ACL key permissions of the user w.r.t the queried index (only if
+  // not profiling, as it was already checked earlier).
+  if (!isProfile && !ACLUserMayAccessIndex(ctx, sp)) {
+    return RedisModule_ReplyWithError(ctx, NOPERM_ERR);
+  }
+
+  if (NumShards == 1) {
+    // There is only one shard in the cluster. We can handle the command locally.
+    return RSHybridCommand(ctx, argv, argc);
+  } else if (cannotBlockCtx(ctx)) {
+    return ReplyBlockDeny(ctx, argv[0]);
+  }
+
+  return ConcurrentSearch_HandleRedisCommandEx(DIST_THREADPOOL, CMDCTX_NO_GIL,
+                                               dist_callback, ctx, argv, argc,
+                                               StrongRef_Demote(spec_ref));
+}
+
 int DistAggregateCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
   if (NumShards == 0) {
     return RedisModule_ReplyWithError(ctx, CLUSTERDOWN_ERR);
@@ -3550,6 +3606,9 @@ int ProfileCommandHandler(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
   if (RMUtil_ArgExists("AGGREGATE", argv, 3, 2)) {
     return DistAggregateCommand(ctx, argv, argc);
   }
+  if (RMUtil_ArgExists("HYBRID", argv, 3, 2)) {
+    return DistHybridCommand(ctx, argv, argc);
+  }
   return RedisModule_ReplyWithError(ctx, "No `SEARCH` or `AGGREGATE` provided");
 }
 
@@ -3782,6 +3841,13 @@ RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
   } else {
     RM_TRY(RMCreateSearchCommand(ctx, "FT.AGGREGATE",
            SafeCmd(DistAggregateCommand), "readonly", 0, 0, -1, "read", false))
+  }
+  if (clusterConfig.type == ClusterType_RedisLabs) {
+    RM_TRY(RMCreateSearchCommand(ctx, "FT.HYBRID",
+           SafeCmd(DistHybridCommand), "readonly", 0, 1, -2, "read", false))
+  } else {
+    RM_TRY(RMCreateSearchCommand(ctx, "FT.HYBRID",
+           SafeCmd(DistHybridCommand), "readonly", 0, 0, -1, "read", false))
   }
   RM_TRY(RMCreateSearchCommand(ctx, "FT.INFO", SafeCmd(InfoCommandHandler), "readonly", 0, 0, -1, "", false))
   RM_TRY(RMCreateSearchCommand(ctx, "FT.SEARCH", SafeCmd(DistSearchCommand), "readonly", 0, 0, -1, "read", false))

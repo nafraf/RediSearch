@@ -23,7 +23,7 @@
 #include "info/info_redis/block_client.h"
 #include "info/info_redis/threads/current_thread.h"
 
-typedef enum { COMMAND_AGGREGATE, COMMAND_SEARCH, COMMAND_EXPLAIN } CommandType;
+typedef enum { COMMAND_AGGREGATE, COMMAND_SEARCH, COMMAND_EXPLAIN, COMMAND_HYBRID } CommandType;
 
 typedef enum {
   EXEC_NO_FLAGS = 0x00,
@@ -320,6 +320,7 @@ static size_t getResultsFactor(AREQ *req) {
  * it. rc is populated with the latest return code.
 */
 static SearchResult **AggregateResults(ResultProcessor *rp, int *rc) {
+  RedisModule_Log(rp->parent->sctx->redisCtx, "warning", "Nafraf: AggregateResults()");
   SearchResult **results = array_new(SearchResult *, 8);
   SearchResult r = {0};
   while (rp->parent->resultLimit && (*rc = rp->Next(rp, &r)) == RS_RESULT_OK) {
@@ -850,6 +851,9 @@ static int buildRequest(RedisModuleCtx *ctx, RedisModuleString **argv, int argc,
   else if (type == COMMAND_AGGREGATE) {
     (*r)->reqflags |= QEXEC_F_IS_AGGREGATE;
   }
+  else if (type == COMMAND_HYBRID) {
+    (*r)->reqflags |= QEXEC_F_IS_HYBRID;
+  }
 
   (*r)->reqflags |= QEXEC_FORMAT_DEFAULT;
 
@@ -1018,6 +1022,10 @@ int RSAggregateCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
   return execCommandCommon(ctx, argv, argc, COMMAND_AGGREGATE, EXEC_NO_FLAGS);
 }
 
+int RSHybridCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
+  return execCommandCommon(ctx, argv, argc, COMMAND_HYBRID, EXEC_NO_FLAGS);
+}
+
 int RSSearchCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
   return execCommandCommon(ctx, argv, argc, COMMAND_SEARCH, EXEC_NO_FLAGS);
 }
@@ -1049,8 +1057,10 @@ int RSProfileCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     cmdType = COMMAND_SEARCH;
   } else if (strcasecmp(cmd, "AGGREGATE") == 0) {
     cmdType = COMMAND_AGGREGATE;
+  } else if (strcasecmp(cmd, "HYBRID") == 0) {
+    cmdType = COMMAND_HYBRID;
   } else {
-    RedisModule_ReplyWithError(ctx, "No `SEARCH` or `AGGREGATE` provided");
+    RedisModule_ReplyWithError(ctx, "No `SEARCH`, `AGGREGATE` or `HYBRID` provided");
     return REDISMODULE_OK;
   }
 

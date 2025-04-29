@@ -91,10 +91,14 @@ typedef enum {
   // The query is for debugging. Note that this is the last bit of uint32_t
   QEXEC_F_DEBUG = 0x80000000,
 
+  /* HYBRID search cannot coexist with IS_AGGREGATE nor IS_SEARCH */
+  QEXEC_F_IS_HYBRID = 0x100000000,
+
 } QEFlags;
 
 #define IsCount(r) ((r)->reqflags & QEXEC_F_NOROWS)
 #define IsSearch(r) ((r)->reqflags & QEXEC_F_IS_SEARCH)
+#define IsHybrid(r) ((r)->reqflags & QEXEC_F_IS_HYBRID)
 #define IsProfile(r) ((r)->reqflags & QEXEC_F_PROFILE)
 #define IsOptimized(r) ((r)->reqflags & QEXEC_OPTIMIZE)
 #define IsFormatExpand(r) ((r)->reqflags & QEXEC_FORMAT_EXPAND)

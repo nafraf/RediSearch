@@ -781,6 +781,7 @@ static void DistAggregateCleanups(RedisModuleCtx *ctx, struct ConcurrentCmdCtx *
 
 void RSExecDistAggregate(RedisModuleCtx *ctx, RedisModuleString **argv, int argc,
                          struct ConcurrentCmdCtx *cmdCtx) {
+  RedisModule_Log(ctx, "warning", "Nafraf: RSExecDistAggregate");
   RedisModule_Reply _reply = RedisModule_NewReply(ctx), *reply = &_reply;
   bool has_map = RedisModule_HasMap(reply);
 
